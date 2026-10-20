@@ -385,10 +385,13 @@ function placeOnPlanet(obj, angle, side, turn = .3, lift = 0, upright = .7) {
   return obj;
 }
 
+const pavilions = [];   // groups that turn to face the camera
+
 /* ---------- Intro stop: the title board ---------- */
 {
   const g = new THREE.Group();
-  placeOnPlanet(g, AHEAD, SIDE, .3, -.35);
+  placeOnPlanet(g, AHEAD, SIDE, 0, -.35);
+  pavilions.push(g);
   const base = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(5, 5.3, 2.9, 64), mat('#ffffff')));
   base.position.y = -.55; g.add(base);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(5.1, .14, 8, 96), mat(C.ink));
@@ -423,7 +426,8 @@ function placeOnPlanet(obj, angle, side, turn = .3, lift = 0, upright = .7) {
 /* ---------- Station pavilions ---------- */
 const stations = STATIONS.map((st, i) => {
   const g = new THREE.Group();
-  placeOnPlanet(g, (i + 1) * STEP + AHEAD, SIDE, .3, -.35);
+  placeOnPlanet(g, (i + 1) * STEP + AHEAD, SIDE, 0, -.35);
+  pavilions.push(g);
   const accent = new THREE.Color(st.accent);
   const plat = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(5, 5.3, 2.9, 64), mat('#ffffff')));
   plat.position.y = -.55; g.add(plat);
@@ -455,8 +459,8 @@ const stations = STATIONS.map((st, i) => {
   sface.position.z = .075; sg.add(sface);
   const post = shadowed(new THREE.Mesh(new THREE.BoxGeometry(.18, 1.2, .18), mat(C.ink)));
   post.position.y = -sh / 2 - .5; sg.add(post);
-  sg.position.set(-4.3, 2.9 + .55, 1.8);
-  sg.rotation.y = .38;
+  sg.position.set(-4.1, 2.9 + .55, 1.6);
+  sg.rotation.y = .15;
   g.add(sg);
 
   // sculptures were designed for a platform top at y = .35; this platform's top is at .9
@@ -705,6 +709,14 @@ const stations = STATIONS.map((st, i) => {
   };
 }
 
+// Every pavilion gets a pivot that keeps its content turned towards the visitor
+pavilions.forEach(g => {
+  const pivot = new THREE.Group();
+  while (g.children.length) pivot.add(g.children[0]);
+  g.add(pivot);
+  g.userData.pivot = pivot;
+});
+
 /* ---------- Decor scattered over the planet ---------- */
 {
   let seed = 11;
@@ -856,7 +868,7 @@ function camPreset(close) {
   // pavilion is seen from above instead of edge-on. The free space next to the info card
   // is handled by the view offset in step(), not by aiming the camera.
   if (close) return isWide()
-    ? { pos: V(-.6, R + 7, 12.6), look: V(-4.7, R + 1.6, -1.4) }
+    ? { pos: V(-1.9, R + 7, 12.6), look: V(-6, R + 1.6, -1.4) }
     : { pos: V(-1.2, R + 8.5, 14), look: V(-4.4, R + 1.4, -1.4) };
   return isWide()
     ? { pos: V(-14, 22, 92), look: V(-11, 3, 0) }
@@ -940,6 +952,15 @@ function step(dt) {
     o.m.rotation.set(t * .3, t * .2, 0);
   });
   stations.forEach(st => st.update(t));
+  // turn each pavilion around its own up axis so it faces the camera
+  pavilions.forEach(g => {
+    g.updateWorldMatrix(true, false);
+    const local = g.worldToLocal(camera.position.clone());
+    const target = Math.atan2(local.x, local.z);
+    const pv = g.userData.pivot;
+    const d = ((target - pv.rotation.y + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    pv.rotation.y += d * Math.min(1, dt * 4);
+  });
 
   // overlays
   const heroO = 1 - clamp01(u / .45);
