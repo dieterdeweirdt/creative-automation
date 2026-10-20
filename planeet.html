@@ -849,9 +849,12 @@ function cardOpacity(u, k) {   // k = 1..6
 /* ================= Camera presets ================= */
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 function camPreset(close) {
+  // Look at the midpoint between pavilion and robot, from high up front-right, so the
+  // pavilion is seen from above instead of edge-on. The free space next to the info card
+  // is handled by the view offset in step(), not by aiming the camera.
   if (close) return isWide()
-    ? { pos: V(3.6, R + 3.6, 11), look: V(-1.1, R + 2.1, -2.4) }
-    : { pos: V(-2.6, R + 9, 18), look: V(-3.6, R - 2.4, -3) };
+    ? { pos: V(-.6, R + 7, 12.6), look: V(-4.7, R + 1.6, -1.4) }
+    : { pos: V(-1.2, R + 8.5, 14), look: V(-4.4, R + 1.4, -1.4) };
   return isWide()
     ? { pos: V(-14, 22, 92), look: V(-11, 3, 0) }
     : { pos: V(0, 30, 150), look: V(0, -14, 0) };
@@ -910,11 +913,23 @@ function step(dt) {
 
   // camera between the far planet view and the close follow view
   const far = camPreset(false), near = camPreset(true);
+  // Pull the close camera back when the free area next to the card is narrower than designed for
+  const ref = cards[Math.max(0, Math.min(5, Math.round(u) - 1))];
+  const freeW = isWide() ? innerWidth - ref.offsetWidth - 40 : innerWidth;
+  const freeH = isWide() ? innerHeight : innerHeight - ref.offsetHeight - 16;
+  const designAspect = isWide() ? 1.27 : 1.15;
+  const pull = THREE.MathUtils.clamp(designAspect / (freeW / freeH), 1, 2.2);
+  near.pos.sub(near.look).multiplyScalar(pull).add(near.look);
   tmpPos.lerpVectors(far.pos, near.pos, close);
   tmpLook.lerpVectors(far.look, near.look, close);
   if (!reduceMotion) { tmpPos.x += Math.sin(t * .4) * .35 * close; tmpPos.y += Math.sin(t * .31) * .2; }
   camera.position.copy(tmpPos);
   camera.lookAt(tmpLook);
+  // Shift the rendered frame so the subject is centred in the space the info card leaves free
+  // (desktop: card on the right → shift left; phone: card at the bottom → shift up).
+  const offX = isWide() ? close * (ref.offsetWidth + 40) / 2 : 0;
+  const offY = isWide() ? 0 : close * (ref.offsetHeight + 16) / 2;
+  camera.setViewOffset(innerWidth, innerHeight, offX, offY, innerWidth, innerHeight);
 
   moons.forEach(o => {
     const a = t * o.s + o.o;
