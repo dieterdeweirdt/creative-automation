@@ -367,10 +367,13 @@ scene.add(spin);
 }
 
 // Place an object on the planet surface: angle along the path, sideways offset, local +z turned toward the viewer/path
-function placeOnPlanet(obj, angle, side, turn = .55, lift = 0) {
+function placeOnPlanet(obj, angle, side, turn = .3, lift = 0, upright = .7) {
   const pt = new THREE.Vector3(side, Math.cos(angle) * R, -Math.sin(angle) * R);
-  const up = pt.clone().normalize();
-  pt.copy(up).multiplyScalar(R + lift);
+  const normal = pt.clone().normalize();
+  pt.copy(normal).multiplyScalar(R + lift);
+  // Stand mostly upright relative to the path instead of leaning outward with the curvature
+  const pathUp = new THREE.Vector3(0, Math.cos(angle), -Math.sin(angle));
+  const up = normal.clone().lerp(pathUp, upright).normalize();
   const back = new THREE.Vector3(0, Math.sin(angle), Math.cos(angle));      // towards the camera when this angle is on top
   back.sub(up.clone().multiplyScalar(back.dot(up))).normalize();
   const right = new THREE.Vector3().crossVectors(up, back).normalize().negate();
@@ -385,9 +388,9 @@ function placeOnPlanet(obj, angle, side, turn = .55, lift = 0) {
 /* ---------- Intro stop: the title board ---------- */
 {
   const g = new THREE.Group();
-  placeOnPlanet(g, AHEAD, SIDE, .5, -.35);
-  const base = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(5, 5.3, .9, 64), mat('#ffffff')));
-  base.position.y = .45; g.add(base);
+  placeOnPlanet(g, AHEAD, SIDE, .3, -.35);
+  const base = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(5, 5.3, 2.9, 64), mat('#ffffff')));
+  base.position.y = -.55; g.add(base);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(5.1, .14, 8, 96), mat(C.ink));
   rim.rotation.x = Math.PI / 2; rim.position.y = .9; g.add(rim);
   const sign = makeCanvasTex(1600, 900, (ctx, w, h) => {
@@ -420,10 +423,10 @@ function placeOnPlanet(obj, angle, side, turn = .55, lift = 0) {
 /* ---------- Station pavilions ---------- */
 const stations = STATIONS.map((st, i) => {
   const g = new THREE.Group();
-  placeOnPlanet(g, (i + 1) * STEP + AHEAD, SIDE, .55, -.35);
+  placeOnPlanet(g, (i + 1) * STEP + AHEAD, SIDE, .3, -.35);
   const accent = new THREE.Color(st.accent);
-  const plat = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(5, 5.3, .9, 64), mat('#ffffff')));
-  plat.position.y = .45; g.add(plat);
+  const plat = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(5, 5.3, 2.9, 64), mat('#ffffff')));
+  plat.position.y = -.55; g.add(plat);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(5.1, .16, 8, 96), mat(accent));
   rim.rotation.x = Math.PI / 2; rim.position.y = .9; g.add(rim);
 
@@ -453,7 +456,7 @@ const stations = STATIONS.map((st, i) => {
   const post = shadowed(new THREE.Mesh(new THREE.BoxGeometry(.18, 1.2, .18), mat(C.ink)));
   post.position.y = -sh / 2 - .5; sg.add(post);
   sg.position.set(-4.3, 2.9 + .55, 1.8);
-  sg.rotation.y = .6;
+  sg.rotation.y = .38;
   g.add(sg);
 
   // sculptures were designed for a platform top at y = .35; this platform's top is at .9
