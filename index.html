@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creative Automation</title>
+<meta name="description" content="Creative Automation: automatiseer repetitief werk en zet AI in als creatieve assistent.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F3F0E8;
+    --paper-2: #E9E5DA;
+    --ink: #121212;
+    --ink-soft: #55524B;
+    --line: #12121222;
+    --blue: #3B2BFF;
+    --coral: #FF5B36;
+    --lime: #D4F25A;
+    --pink: #FFB3D9;
+    --display: "Bricolage Grotesque", system-ui, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --gutter: clamp(16px, 4vw, 56px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--display);
+    font-size: 18px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--lime); }
+  em { font-family: var(--serif); font-style: italic; font-weight: 400; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: fixed; inset: 0 0 auto 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px var(--gutter);
+    font-family: var(--mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+    mix-blend-mode: difference; color: #fff;
+  }
+  nav a { color: inherit; text-decoration: none; }
+  nav ul { display: flex; gap: 22px; list-style: none; }
+  @media (max-width: 760px) { nav ul { display: none; } }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    min-height: 100svh;
+    display: grid; grid-template-rows: 1fr auto;
+    padding: 96px var(--gutter) 40px;
+    position: relative;
+  }
+  .variants {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: clamp(6px, 1vw, 12px);
+    align-self: center;
+    margin-bottom: 40px;
+  }
+  .v {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: clamp(18px, 4.2vw, 64px);
+    line-height: 1; letter-spacing: -.04em;
+    transition: background .5s, color .5s, border-radius .5s, transform .5s;
+    overflow: hidden;
+  }
+  .v.story { aspect-ratio: auto; grid-row: span 2; }
+  .v.wide { aspect-ratio: auto; grid-column: span 2; }
+  .v span { display: block; transition: font-variation-settings .5s, transform .5s; }
+  @media (max-width: 640px) {
+    .variants { grid-template-columns: repeat(4, 1fr); }
+    .v.hide-sm { display: none; }
+  }
+  .hero h1 {
+    font-size: clamp(54px, 13.5vw, 230px);
+    line-height: .86;
+    letter-spacing: -.055em;
+    font-weight: 800;
+  }
+  .hero h1 em { letter-spacing: -.02em; font-size: 1.04em; display: block; padding-left: .04em; }
+  .hero-foot {
+    display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap;
+    margin-top: 28px;
+  }
+  .hero-foot p { max-width: 30ch; font-size: 19px; color: var(--ink-soft); }
+  .badge {
+    font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+    border: 1px solid var(--ink); border-radius: 99px; padding: 8px 14px;
+    display: inline-flex; gap: 8px; align-items: center;
+  }
+  .badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+
+  /* ---------- Marquee ---------- */
+  .marquee {
+    background: var(--ink); color: var(--paper);
+    overflow: hidden; white-space: nowrap;
+    padding: 18px 0;
+    font-size: clamp(22px, 3vw, 38px); font-weight: 300; letter-spacing: -.02em;
+  }
+  .marquee div { display: inline-block; animation: slide 40s linear infinite; }
+  .marquee span { margin: 0 .6em; }
+  .marquee b { color: var(--lime); font-weight: 300; }
+  @keyframes slide { to { transform: translateX(-50%); } }
+
+  /* ---------- Intro ---------- */
+  .intro {
+    padding: clamp(80px, 14vw, 180px) var(--gutter);
+    display: grid; grid-template-columns: 1fr 3fr; gap: 40px;
+  }
+  .label {
+    font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft);
+  }
+  .intro .lead {
+    font-size: clamp(28px, 4vw, 56px); line-height: 1.08; letter-spacing: -.03em; font-weight: 400;
+  }
+  .intro .lead mark {
+    background: none; color: var(--blue);
+  }
+  .intro .sub {
+    margin-top: 40px; max-width: 46ch; font-size: 20px; color: var(--ink-soft);
+  }
+  .intro .sub strong { color: var(--ink); font-weight: 600; }
+  @media (max-width: 760px) { .intro { grid-template-columns: 1fr; } }
+
+  /* ---------- Modules ---------- */
+  .modules { padding: 0 var(--gutter) 40px; }
+  .modules-head {
+    display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--ink); padding-bottom: 20px;
+  }
+  .modules-head h2 { font-size: clamp(40px, 7vw, 104px); line-height: .9; letter-spacing: -.05em; font-weight: 800; }
+  .module {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(20px, 4vw, 64px);
+    padding: clamp(48px, 7vw, 96px) 0;
+    border-bottom: 1px solid var(--line);
+    align-items: start;
+  }
+  .num { font-family: var(--mono); font-size: 14px; padding-top: 10px; }
+  .module h3 {
+    font-size: clamp(34px, 4.6vw, 64px); line-height: .98; letter-spacing: -.04em; font-weight: 700;
+  }
+  .module h3 em { display: block; font-size: 1.05em; color: var(--accent, var(--blue)); }
+  .module p { margin-top: 24px; max-width: 48ch; color: var(--ink-soft); }
+  .tags { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tags span {
+    font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 99px; padding: 5px 11px;
+  }
+  .viz {
+    background: var(--paper-2); border-radius: 14px;
+    aspect-ratio: 5 / 4; position: relative; overflow: hidden;
+    display: grid; place-items: center;
+  }
+  @media (max-width: 900px) {
+    .module { grid-template-columns: 1fr; }
+    .num { padding-top: 0; }
+  }
+
+  /* Viz 1: batch */
+  .batch { position: relative; width: 70%; height: 66%; }
+  .photo {
+    position: absolute; inset: 0; border-radius: 8px;
+    background: linear-gradient(160deg, #ffd9c9, #ff8e6b);
+    box-shadow: 0 10px 30px #0002;
+    transform: translate(calc(var(--i) * 14px), calc(var(--i) * -14px));
+    display: grid; place-items: center;
+  }
+  .photo::before { content: ""; width: 34%; aspect-ratio: 1; border-radius: 50% 50% 46% 46%; background: #fff8; }
+  .photo::after {
+    content: "LOGO"; position: absolute; right: 10px; bottom: 10px;
+    font: 500 10px var(--mono); background: var(--ink); color: var(--paper); padding: 3px 6px; border-radius: 3px;
+    opacity: 0; transform: scale(.6); transition: .3s;
+  }
+  .photo.done::after { opacity: 1; transform: none; }
+  .photo.done { background: linear-gradient(160deg, #e2dcff, #7a6bff); }
+  .play {
+    position: absolute; left: 16px; bottom: 16px;
+    font: 500 12px var(--mono); background: var(--ink); color: var(--lime);
+    padding: 7px 12px; border-radius: 99px;
+  }
+  .counter { position: absolute; right: 16px; bottom: 16px; font: 500 12px var(--mono); }
+
+  /* Viz 2: bulk create */
+  .bulk { width: 88%; display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; align-items: center; }
+  .sheet { font: 400 10.5px/1 var(--mono); background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 6px 20px #0001; }
+  .sheet div { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #0001; }
+  .sheet div span { padding: 7px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sheet div span + span { border-left: 1px solid #0001; }
+  .sheet div:first-child { background: var(--ink); color: var(--paper); }
+  .sheet div.active { background: var(--lime); }
+  .formats { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 8px; }
+  .fmt {
+    border-radius: 6px; padding: 8px; color: #fff; display: flex; flex-direction: column; justify-content: space-between;
+    font-weight: 700; letter-spacing: -.02em; line-height: 1; font-size: 13px;
+    background: var(--c, var(--blue)); transition: background .4s;
+  }
+  .fmt small { font: 500 8px var(--mono); opacity: .8; text-transform: uppercase; }
+  .fmt .cta { align-self: flex-start; font: 500 8px var(--mono); background: #fff; color: var(--ink); padding: 3px 5px; border-radius: 99px; }
+  .fmt.post { aspect-ratio: 1; }
+  .fmt.story { grid-row: span 2; aspect-ratio: 9 / 16; }
+  .fmt.banner { aspect-ratio: 2 / 1; }
+  .fmt .t { transition: opacity .3s; }
+
+  /* Viz 3: generation */
+  .gen { width: 84%; }
+  .prompt {
+    background: #fff; border-radius: 10px; padding: 12px 14px; font: 400 12px/1.5 var(--mono);
+    box-shadow: 0 6px 20px #0001; min-height: 58px;
+  }
+  .prompt::after { content: "▍"; animation: pulse 1s infinite; color: var(--blue); }
+  .tiles { margin-top: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .tile { aspect-ratio: 3 / 4; border-radius: 8px; opacity: .15; transform: scale(.94); transition: opacity .5s, transform .5s; }
+  .tile.on { opacity: 1; transform: none; }
+  .tile:nth-child(1) { background: radial-gradient(circle at 30% 30%, var(--pink), var(--coral)); }
+  .tile:nth-child(2) { background: radial-gradient(circle at 70% 40%, var(--pink), var(--coral) 70%, #9b2a12); }
+  .tile:nth-child(3) { background: radial-gradient(circle at 40% 70%, #ffe1ef, var(--coral)); }
+  .tile:nth-child(4) { background: radial-gradient(circle at 60% 20%, var(--pink), #e14422); }
+
+  /* Viz 4: code */
+  .code {
+    width: 86%; background: var(--ink); color: #e9e6dd; border-radius: 10px; overflow: hidden;
+    font: 400 11.5px/1.7 var(--mono); box-shadow: 0 14px 40px #0003;
+  }
+  .code .bar { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid #ffffff14; }
+  .code .bar i { width: 9px; height: 9px; border-radius: 50%; background: #ffffff30; }
+  .code pre { padding: 14px 16px; white-space: pre-wrap; min-height: 170px; }
+  .code .me { color: var(--lime); }
+  .code .k { color: var(--pink); }
+  .code .s { color: #9db7ff; }
+
+  /* Viz 5: flow */
+  .flow { display: flex; flex-direction: column; align-items: center; gap: 0; width: 80%; }
+  .node {
+    width: 100%; max-width: 280px; background: #fff; border-radius: 10px; padding: 10px 14px;
+    display: flex; gap: 10px; align-items: center; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
+    box-shadow: 0 6px 20px #0001; transition: outline-color .3s, transform .3s;
+    outline: 2px solid transparent; outline-offset: 2px;
+  }
+  .node small { display: block; font: 400 10px var(--mono); color: var(--ink-soft); }
+  .node .ic { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; font-size: 13px; flex: none; }
+  .node.lit { outline-color: var(--accent); transform: scale(1.03); }
+  .wire { width: 2px; height: 20px; background: repeating-linear-gradient(var(--ink) 0 4px, transparent 4px 8px); }
+
+  /* ---------- Journey ---------- */
+  .journey {
+    background: var(--ink); color: var(--paper);
+    padding: clamp(80px, 12vw, 160px) var(--gutter);
+    border-radius: 28px 28px 0 0;
+  }
+  .journey .label { color: #a9a59b; }
+  .journey h2 {
+    margin-top: 20px;
+    font-size: clamp(40px, 7.5vw, 120px); line-height: .92; letter-spacing: -.05em; font-weight: 800; max-width: 14ch;
+  }
+  .journey h2 em { color: var(--lime); }
+  .steps {
+    margin-top: clamp(48px, 8vw, 96px);
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+    counter-reset: s;
+  }
+  .step {
+    border-top: 2px solid #ffffff33; padding-top: 14px; font-size: 15px; line-height: 1.3;
+    counter-increment: s; transition: border-color .4s;
+  }
+  .step::before { content: "0" counter(s); display: block; font: 400 11px var(--mono); color: #a9a59b; margin-bottom: 8px; }
+  .step.lit { border-color: var(--lime); }
+  .step:first-child, .step:last-child { font-weight: 700; }
+  @media (max-width: 760px) { .steps { grid-template-columns: repeat(2, 1fr); row-gap: 28px; } }
+
+  footer {
+    background: var(--ink); color: #a9a59b;
+    padding: 28px var(--gutter);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    font: 400 12px var(--mono); text-transform: uppercase; letter-spacing: .06em;
+    border-top: 1px solid #ffffff1a;
+  }
+
+  /* Reveal */
+  .r { opacity: 0; transform: translateY(24px); transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1); }
+  .r.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .r { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#top">Creative Automation</a>
+  <ul>
+    <li><a href="#intro">Intro</a></li>
+    <li><a href="#modules">Wat je leert</a></li>
+    <li><a href="#opdracht">Periodeopdracht</a></li>
+    <li><a href="wereld.html">3D-wereld ↗</a></li>
+  </ul>
+</nav>
+
+<header class="hero" id="top">
+  <div class="variants" id="variants" aria-hidden="true"></div>
+  <div>
+    <h1>Creative<em>Automation</em></h1>
+    <div class="hero-foot">
+      <p>Werk minder met de hand. Maak meer varianten. Houd de controle over het design.</p>
+      <span style="display:flex;gap:8px;flex-wrap:wrap"><a class="badge" href="wereld.html" style="color:inherit;text-decoration:none;background:var(--ink);color:var(--paper)">Loop rond in 3D →</a><span class="badge"><i></i> Volgend academiejaar</span></span>
+    </div>
+  </div>
+</header>
+
+<div class="marquee" aria-hidden="true">
+  <div>
+    <span>Photoshop</span><b>✦</b><span>Figma Buzz</span><b>✦</b><span>Weave</span><b>✦</b><span>Claude Cowork</span><b>✦</b><span>Claude Code</span><b>✦</b><span>Figma MCP</span><b>✦</b><span>GitHub Pages</span><b>✦</b><span>MailerLite</span><b>✦</b>
+    <span>Photoshop</span><b>✦</b><span>Figma Buzz</span><b>✦</b><span>Weave</span><b>✦</b><span>Claude Cowork</span><b>✦</b><span>Claude Code</span><b>✦</b><span>Figma MCP</span><b>✦</b><span>GitHub Pages</span><b>✦</b><span>MailerLite</span><b>✦</b>
+  </div>
+</div>
+
+<section class="intro" id="intro">
+  <div class="label r">Intro</div>
+  <div>
+    <p class="lead r">Creative Automation leert je hoe je als digitale vormgever <mark>repetitief werk automatiseert</mark> en AI inzet als <em>creatieve assistent.</em></p>
+    <p class="sub r">Je werkt minder met de hand, produceert meer varianten en houdt toch de controle over het design. Doorheen het semester werk je aan een periodeopdracht: <strong>een volledige marketingcampagne voor een product, van briefing tot afgewerkte content.</strong></p>
+  </div>
+</section>
+
+<section class="modules" id="modules">
+  <div class="modules-head">
+    <h2 class="r">Wat je<br>leert</h2>
+    <span class="label r">05 onderdelen</span>
+  </div>
+
+  <!-- 01 -->
+  <article class="module" style="--accent: var(--coral)">
+    <div class="num r">01</div>
+    <div class="r">
+      <h3>Beeldbewerking <em>acties &amp; batch</em></h3>
+      <p>Je neemt Photoshop-acties op die een reeks bewerkingen onthouden: resizen, achtergronden uitbreiden met generative fill, een logo plaatsen en exporteren. Met batch-verwerking pas je die actie in één keer toe op een volledige map productfoto's. Zo verwerk je tientallen beelden consistent, zonder ze één voor één te openen.</p>
+      <div class="tags"><span>Photoshop</span><span>Acties</span><span>Generative fill</span><span>Batch</span></div>
+    </div>
+    <div class="viz r" aria-hidden="true">
+      <div class="batch" id="batch"></div>
+      <span class="play">▶ batch.atn</span>
+      <span class="counter" id="batchCount">0 / 5</span>
+    </div>
+  </article>
+
+  <!-- 02 -->
+  <article class="module" style="--accent: var(--blue)">
+    <div class="num r">02</div>
+    <div class="r">
+      <h3>Social media <em>Figma automation</em></h3>
+      <p>In Figma Buzz bouw je templates voor verschillende formaten, zoals Instagram-posts, stories en display-banners. Via bulk create vul je die templates automatisch met data uit een CSV- of XLSX-bestand: titels, taglines, call-to-actions en afbeeldingen. Eén spreadsheet levert zo een volledige campagne op in alle formaten, met een consistent design.</p>
+      <div class="tags"><span>Figma Buzz</span><span>Templates</span><span>Bulk create</span><span>CSV / XLSX</span></div>
+    </div>
+    <div class="viz r" aria-hidden="true">
+      <div class="bulk">
+        <div class="sheet" id="sheet">
+          <div><span>titel</span><span>cta</span></div>
+          <div><span>Zomer Drop</span><span>Shop nu</span></div>
+          <div><span>Nieuw: Mint</span><span>Ontdek</span></div>
+          <div><span>Laatste kans</span><span>Bestel</span></div>
+        </div>
+        <div class="formats">
+          <div class="fmt post"><small>post</small><span class="t">Zomer Drop</span><span class="cta">Shop nu</span></div>
+          <div class="fmt story"><small>story</small><span class="t">Zomer Drop</span><span class="cta">Shop nu</span></div>
+          <div class="fmt banner"><small>banner</small><span class="t">Zomer Drop</span></div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 03 -->
+  <article class="module" style="--accent: #E0408A">
+    <div class="num r">03</div>
+    <div class="r">
+      <h3>Content generatie <em>Weave &amp; Claude Cowork</em></h3>
+      <p>Je genereert beelden en video met AI-tools zoals Weave, en leert hoe je met goede prompts een consistente stijl bewaakt. Met Claude Cowork laat je AI zelfstandig taken uitvoeren op je eigen bestanden: teksten schrijven, documenten opmaken en content plannen. Je ontdekt waar AI je werk versnelt en waar je zelf moet bijsturen.</p>
+      <div class="tags"><span>Weave</span><span>Prompting</span><span>Beeld &amp; video</span><span>Claude Cowork</span></div>
+    </div>
+    <div class="viz r" aria-hidden="true">
+      <div class="gen">
+        <div class="prompt" id="prompt"></div>
+        <div class="tiles" id="tiles"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 04 -->
+  <article class="module" style="--accent: #1F8A5B">
+    <div class="num r">04</div>
+    <div class="r">
+      <h3>Vibe coding <em>&amp; web</em></h3>
+      <p>Met Claude Code bouw je websites en tools door in gewone taal te beschrijven wat je wil. Je breidt Claude uit met skills, en via de Figma MCP-koppeling laat je Claude ontwerpen genereren in Figma en designs omzetten naar HTML en CSS. Je bouwt zelfs je eigen Figma-plugin. Je websites zet je online met GitHub Pages.</p>
+      <div class="tags"><span>Claude Code</span><span>Skills</span><span>Figma MCP</span><span>Figma-plugin</span><span>GitHub Pages</span></div>
+    </div>
+    <div class="viz r" aria-hidden="true">
+      <div class="code">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <pre id="code"></pre>
+      </div>
+    </div>
+  </article>
+
+  <!-- 05 -->
+  <article class="module" style="--accent: #E8A317">
+    <div class="num r">05</div>
+    <div class="r">
+      <h3>E-mailmarketing <em>&amp; newsletters</em></h3>
+      <p>In MailerLite bouw je inschrijvingsformulieren die je op een website plaatst, ontwerp je e-mailcampagnes en zet je automatisatieflows op: een nieuwe inschrijver krijgt bijvoorbeeld automatisch een reeks welkomstmails. Zo leer je hoe merken hun publiek opbouwen en blijven bereiken.</p>
+      <div class="tags"><span>MailerLite</span><span>Formulieren</span><span>Campagnes</span><span>Automatisatieflows</span></div>
+    </div>
+    <div class="viz r" aria-hidden="true">
+      <div class="flow" id="flow">
+        <div class="node"><span class="ic" style="background:var(--lime)">＋</span><div>Nieuwe inschrijver<small>trigger · formulier</small></div></div>
+        <div class="wire"></div>
+        <div class="node"><span class="ic" style="background:var(--pink)">✉</span><div>Welkomstmail 1<small>meteen</small></div></div>
+        <div class="wire"></div>
+        <div class="node"><span class="ic" style="background:var(--pink)">✉</span><div>Welkomstmail 2<small>na 2 dagen</small></div></div>
+        <div class="wire"></div>
+        <div class="node"><span class="ic" style="background:var(--pink)">✉</span><div>Welkomstmail 3<small>na 5 dagen</small></div></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="journey" id="opdracht">
+  <span class="label r">Periodeopdracht</span>
+  <h2 class="r">Eén product. Eén <em>volledige</em> campagne.</h2>
+  <div class="steps" id="steps">
+    <div class="step r">Briefing</div>
+    <div class="step r">Productbeelden in batch</div>
+    <div class="step r">Social in alle formaten</div>
+    <div class="step r">AI-content</div>
+    <div class="step r">Website online</div>
+    <div class="step r">Afgewerkte content</div>
+  </div>
+</section>
+
+<footer>
+  <span>Creative Automation</span>
+  <span>Tot volgend academiejaar ✦</span>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Hero: one template, many variants ---- */
+  const palettes = [
+    ['#3B2BFF', '#F3F0E8'], ['#FF5B36', '#121212'], ['#D4F25A', '#121212'],
+    ['#121212', '#D4F25A'], ['#FFB3D9', '#3B2BFF'], ['#E9E5DA', '#FF5B36'],
+    ['#121212', '#FFB3D9'], ['#3B2BFF', '#D4F25A']
+  ];
+  const glyphs = ['Aa', 'Ca', '✦', '%', '→', 'Ø', '&', '*', 'A', 'c'];
+  const layout = ['', 'story', '', 'wide', '', '', 'hide-sm', '', '', 'hide-sm'];
+  const wrap = document.getElementById('variants');
+  const cells = layout.map(cls => {
+    const d = document.createElement('div');
+    d.className = 'v ' + cls;
+    d.innerHTML = '<span></span>';
+    wrap.appendChild(d);
+    return d;
+  });
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const paint = el => {
+    const [bg, fg] = pick(palettes);
+    el.style.background = bg;
+    el.style.color = fg;
+    el.style.borderRadius = pick(['6px', '50%', '6px 40% 6px 6px', '999px 999px 6px 6px', '6px']);
+    const s = el.firstChild;
+    s.textContent = pick(glyphs);
+    s.style.fontFamily = Math.random() > .6 ? 'var(--serif)' : 'var(--display)';
+    s.style.fontStyle = s.style.fontFamily.includes('serif') ? 'italic' : 'normal';
+    s.style.transform = `rotate(${pick([0, 0, -8, 12, 90])}deg)`;
+  };
+  cells.forEach(paint);
+  if (!reduce) setInterval(() => paint(pick(cells)), 700);
+
+  /* ---- Reveal on scroll ---- */
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }), { threshold: .15 });
+  document.querySelectorAll('.r').forEach((el, i) => {
+    el.style.transitionDelay = (i % 4) * 70 + 'ms';
+    io.observe(el);
+  });
+
+  /* Run a viz loop only while visible */
+  const whenVisible = (el, start) => {
+    let timer = null;
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !timer) timer = start();
+      else if (!e.isIntersecting && timer) { clearInterval(timer); timer = null; }
+    }, { threshold: .3 }).observe(el);
+  };
+
+  /* ---- 01 Batch ---- */
+  const batch = document.getElementById('batch');
+  const count = document.getElementById('batchCount');
+  const photos = [4, 3, 2, 1, 0].map(i => {
+    const p = document.createElement('div');
+    p.className = 'photo';
+    p.style.setProperty('--i', i);
+    batch.appendChild(p);
+    return p;
+  });
+  let bi = 0;
+  whenVisible(batch, () => setInterval(() => {
+    if (bi === photos.length) { photos.forEach(p => p.classList.remove('done')); bi = 0; }
+    else { photos[photos.length - 1 - bi].classList.add('done'); bi++; }
+    count.textContent = bi + ' / ' + photos.length;
+  }, 650));
+
+  /* ---- 02 Bulk create ---- */
+  const rows = [...document.querySelectorAll('#sheet div')].slice(1);
+  const fmts = document.querySelectorAll('.fmt');
+  const colors = ['#3B2BFF', '#1F8A5B', '#FF5B36'];
+  let ri = 0;
+  const fill = () => {
+    rows.forEach((r, i) => r.classList.toggle('active', i === ri));
+    const [t, c] = [...rows[ri].children].map(s => s.textContent);
+    fmts.forEach(f => {
+      f.style.setProperty('--c', colors[ri]);
+      f.querySelector('.t').textContent = t;
+      const cta = f.querySelector('.cta'); if (cta) cta.textContent = c;
+    });
+    ri = (ri + 1) % rows.length;
+  };
+  fill();
+  whenVisible(document.getElementById('sheet'), () => setInterval(fill, 1600));
+
+  /* ---- 03 Prompt ---- */
+  const promptEl = document.getElementById('prompt');
+  const tiles = document.querySelectorAll('.tile');
+  const text = 'productfoto, zacht ochtendlicht, koraal & roze palet, minimalistische studio, consistente stijl';
+  whenVisible(promptEl, () => {
+    let i = 0;
+    return setInterval(() => {
+      if (i <= text.length) {
+        promptEl.textContent = text.slice(0, i);
+        tiles.forEach(t => t.classList.remove('on'));
+      } else {
+        const k = Math.min(tiles.length, Math.floor((i - text.length) / 6));
+        tiles.forEach((t, j) => t.classList.toggle('on', j < k));
+        if (i > text.length + 60) i = -1;
+      }
+      i++;
+    }, 45);
+  });
+
+  /* ---- 04 Code ---- */
+  const codeEl = document.getElementById('code');
+  const script = [
+    ['me', '› Maak een one-page site voor mijn campagne,\n  bold typografie, veel witruimte.\n\n'],
+    ['', '<'], ['k', 'section'], ['', ' class='], ['s', '"hero"'], ['', '>\n  <'], ['k', 'h1'], ['', '>Zomer Drop</'], ['k', 'h1'], ['', '>\n</'], ['k', 'section'], ['', '>\n\n'],
+    ['me', '✓ Online via GitHub Pages']
+  ];
+  whenVisible(codeEl, () => {
+    let seg = 0, ch = 0, pause = 0;
+    codeEl.innerHTML = '';
+    return setInterval(() => {
+      if (pause) { pause--; if (!pause) { codeEl.innerHTML = ''; seg = ch = 0; } return; }
+      const [cls, str] = script[seg];
+      let span = codeEl.lastChild;
+      if (ch === 0) { span = document.createElement('span'); if (cls) span.className = cls; codeEl.appendChild(span); }
+      span.textContent += str[ch++];
+      if (ch >= str.length) { seg++; ch = 0; if (seg === script.length) pause = 60; }
+    }, 32);
+  });
+
+  /* ---- 05 Flow ---- */
+  const nodes = document.querySelectorAll('#flow .node');
+  let ni = 0;
+  whenVisible(document.getElementById('flow'), () => setInterval(() => {
+    nodes.forEach((n, i) => n.classList.toggle('lit', i === ni));
+    ni = (ni + 1) % nodes.length;
+  }, 900));
+
+  /* ---- Journey steps ---- */
+  const steps = document.querySelectorAll('.step');
+  let si = 0;
+  whenVisible(document.getElementById('steps'), () => setInterval(() => {
+    steps.forEach((s, i) => s.classList.toggle('lit', i <= si));
+    si = (si + 1) % (steps.length + 2);
+  }, 600));
+})();
+</script>
+</body>
+</html>
