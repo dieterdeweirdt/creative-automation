@@ -116,7 +116,7 @@
     .dialog .tags span { font-size: 7px; padding: 6px 7px; }
     .dialog .tag { font-size: 8px; padding: 6px 8px; }
     .dialog .tag { margin-bottom: 12px; }
-    #outro { width: calc(100vw - 40px); padding: 22px; }
+    #outro { width: calc(100vw - 40px); padding: 22px; top: auto; bottom: 18px; }
     #outro h2 { font-size: 20px; line-height: 30px; }
   }
   @media (max-width: 900px) and (max-height: 700px) { #intro p { display: none; } }
@@ -136,11 +136,28 @@
   }
   .touchpad button.on { background: #FFE27A; transform: translate(2px, 2px); }
   .touchpad.show { display: flex; }
-  @media (hover: none), (max-width: 900px) { .controls { display: none; } }
+  @media (hover: none), (max-width: 1180px) { .controls { display: none; } }
+
+  /* ---------- Zone navigation ---------- */
+  .zones {
+    position: fixed; z-index: 18; left: 50%; bottom: 30px; transform: translateX(-50%);
+    display: flex; gap: 16px; list-style: none;
+  }
+  .zones button {
+    font: 10px/1 var(--pixel); color: var(--ink); background: #fff; border: 0; cursor: pointer;
+    padding: 10px 12px; white-space: nowrap;
+  }
+  .zones button:hover { background: #FFF1A8; }
+  .zones button.on { background: var(--c); color: #fff; }
+  .zones button:active { transform: translate(2px, 2px); }
+  @media (max-width: 900px) {
+    .zones { bottom: auto; top: calc(max(22px, env(safe-area-inset-top)) + 46px); gap: 10px; }
+    .zones button { font-size: 8px; padding: 7px 7px; }
+  }
   @media (hover: hover) and (min-width: 901px) { .touchpad { display: none !important; } }
-  .chip .short { display: none; }
+  .short { display: none; }
   @media (max-width: 640px) {
-    .chip .full { display: none; } .chip .short { display: inline; }
+    .full { display: none; } .short { display: inline; }
     .hud-right { gap: 12px; }
   }
 
@@ -180,6 +197,8 @@
 </section>
 
 <div id="cards"></div>
+
+<nav class="zones" id="zones" aria-label="Spring naar een zone"></nav>
 
 <div class="controls" id="controls"><kbd>W</kbd><kbd>S</kbd> HOGER / LAGER<br><kbd>D</kbd><kbd>A</kbd> VOORUIT / ACHTERUIT<br>OF GEWOON SCROLLEN</div>
 <div class="touchpad" id="touchpad">
@@ -303,6 +322,8 @@ const WORLD_W = FINISH_X + 900;
 const DIVE_SCROLL = 700;        // px of scroll used for the dive
 const SWIM_START_X = 720;       // swimmer x when the dive ends
 const SWIM_END_X = FINISH_X - 330;
+const EXIT_SCROLL = 700;        // px of scroll used to climb out at the finish
+const LAND_X = FINISH_X + 40;   // where the swimmer lands on the far deck
 
 const world = document.getElementById('world');
 world.style.width = WORLD_W + 'px';
@@ -527,6 +548,16 @@ function popup(x, y, text, color) {
   popups.push({ el: p, y, life: 1 });
 }
 
+/* ---- splash droplets (dive in / jump out) ---- */
+const drops = [];
+function splash(x, n = 14) {
+  for (let k = 0; k < n; k++) {
+    const sz = 6 + Math.floor(Math.random() * 2) * 6;
+    const d = el('', { left: x + 'px', top: SURFACE + 'px', width: sz + 'px', height: sz + 'px', background: k % 3 ? '#E8F6FF' : '#9FD8FF', zIndex: 7 });
+    drops.push({ el: d, x, y: SURFACE - 4, vx: (Math.random() - .5) * 320, vy: -260 - Math.random() * 320 });
+  }
+}
+
 /* ---- ambient + swimmer bubbles ---- */
 const bubbles = [];
 function spawnBubble(x, y, big = false) {
@@ -565,7 +596,7 @@ function layout() {
   scale = innerHeight / VIEW_H;
   if (innerWidth < 700) scale = Math.min(scale, innerWidth / 700);   // phones: zoom out so the scene sits above the cards
   viewW = innerWidth / scale;
-  track.style.height = (DIVE_SCROLL + SWIM_DIST * 1.1 + innerHeight) + 'px';
+  track.style.height = (DIVE_SCROLL + SWIM_DIST * 1.1 + EXIT_SCROLL + innerHeight) + 'px';
 }
 layout();
 addEventListener('resize', layout);
@@ -574,6 +605,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = t => t * t * (3 - 2 * t);
 
+let exitDepth = null, prevDiveT = 0, prevExitT = 0, navTween = null;
 let scrollShown = scrollY, lastScroll = scrollY, idle = 0, depth = SWIM_Y, vy = 0, onFloor = false, frameT = 0, facing = 1, prevHead = null, hoopScore = 0;
 let visited = new Set(), activeCard = -1;
 
@@ -634,12 +666,46 @@ addEventListener('blur', () => { for (const k in input) input[k] = false; });
 });
 pixelize(document.getElementById('controls'), { P: 4, drop: 1 });
 
-document.getElementById('diveBtn').addEventListener('click', () => scrollTo({ top: DIVE_SCROLL + 40, behavior: 'smooth' }));
-document.getElementById('againBtn').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+const S_SWIM_END = DIVE_SCROLL + SWIM_DIST * 1.1;
+const ZONES = [
+  { label: 'START', short: 'GO', c: '#E8433A', top: () => 0 },
+  ...STATIONS.map((st, i) => ({ label: st.num, short: st.num, c: st.accent, top: () => DIVE_SCROLL + (STATION_X[i] - SWIM_START_X) * 1.1 })),
+  { label: 'FINISH', short: 'FIN', c: '#1F8A5B', top: () => S_SWIM_END + EXIT_SCROLL },
+];
+// Animated travel: scroll in small steps so the swimmer really swims (and dives / climbs out) on the way
+function travelTo(top) {
+  const start = scrollY, dist = top - start;
+  if (Math.abs(dist) < 2) return;
+  navTween = { start, dist, t: 0, dur: clamp(Math.abs(dist) / 2600, .8, 3.4) };
+}
+const zonesEl = document.getElementById('zones');
+const zoneBtns = ZONES.map(z => {
+  const b = document.createElement('button');
+  b.style.setProperty('--c', z.c);
+  b.innerHTML = `<span class="full">${z.label}</span><span class="short">${z.short}</span>`;
+  b.setAttribute('aria-label', z.label === 'START' ? 'Naar de start' : z.label === 'FINISH' ? 'Naar de finish' : `Naar onderdeel ${z.label}`);
+  b.addEventListener('click', () => travelTo(z.top()));
+  zonesEl.appendChild(b);
+  pixelize(b, { P: 3, shine: false, drop: 1 });
+  return b;
+});
+['wheel', 'touchstart'].forEach(t => addEventListener(t, () => { navTween = null; }, { passive: true }));
+addEventListener('keydown', e => { if (KEYMAP[e.key.toLowerCase()]) navTween = null; }, true);
+
+document.getElementById('diveBtn').addEventListener('click', () => travelTo(DIVE_SCROLL + 40));
+document.getElementById('againBtn').addEventListener('click', () => travelTo(0));
 
 let prev = performance.now(), simT = 0;
 function step(dt) {
   simT += dt;
+  if (navTween) {
+    navTween.t += dt;
+    const u = Math.min(1, navTween.t / navTween.dur);
+    const e = u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+    scrollTo(0, navTween.start + navTween.dist * e);
+    if (u >= 1) navTween = null;
+  }
+  const autoNav = !!navTween;
   if (input.fwd) scrollBy(0, 700 * dt);
   if (input.back) scrollBy(0, -700 * dt);
 
@@ -663,14 +729,15 @@ function step(dt) {
     sx = SWIM_START_X + clamp(d, 0, SWIM_DIST);
     // vertical swimming: W/S, arrows or the touch buttons; drift down when you stop scrolling
     const MIN_D = SURFACE + 16, MAX_D = FLOOR - 66;
-    if (input.up) { vy = lerp(vy, -300, Math.min(1, dt * 8)); onFloor = false; }
+    if (autoNav) { vy = 0; onFloor = false; depth = lerp(depth, SWIM_Y, Math.min(1, dt * 4)); }
+    else if (input.up) { vy = lerp(vy, -300, Math.min(1, dt * 8)); onFloor = false; }
     else if (input.down) vy = lerp(vy, 300, Math.min(1, dt * 8));
     else if (idle > .35 || onFloor) vy = vy < 0 ? lerp(vy, 0, Math.min(1, dt * 14)) : Math.min(vy + dt * 60, 70);
     else vy = lerp(vy, 0, Math.min(1, dt * 14));
     depth = clamp(depth + vy * dt, MIN_D, MAX_D);
     if (depth >= MAX_D) { vy = 0; if (!input.up) onFloor = true; }
     if (depth <= MIN_D && vy < 0) vy = 0;
-    const active = moving || input.up || input.down;
+    const active = moving || input.up || input.down || autoNav;
     if (onFloor && !active) {
       // standing on the pool floor
       pose = 'stand'; sy = FLOOR - 156; rot = 0;
@@ -691,7 +758,7 @@ function step(dt) {
     }
     // hoops: passing the hoop's x with your body inside the opening scores
     const head = sx + (facing > 0 ? 190 : 50), mid = depth + 27;
-    if (prevHead !== null && pose !== 'stand') {
+    if (prevHead !== null && pose !== 'stand' && !autoNav) {
       hoops.forEach(h => {
         if ((prevHead - h.x) * (head - h.x) > 0 || prevHead === head) return;
         if (h.state === 'done') return;
@@ -710,6 +777,44 @@ function step(dt) {
     }
     prevHead = pose === 'stand' ? null : head;
   }
+  // splash when entering the water during the dive
+  if (prevDiveT < .55 && diveT >= .55) splash(660);
+  prevDiveT = diveT;
+
+  // finish: swim up, leap out of the water and land on the far deck
+  const exitT = clamp((s - S_SWIM_END) / EXIT_SCROLL, 0, 1);
+  if (exitT > 0) {
+    if (exitDepth === null) exitDepth = depth;
+    onFloor = false; prevHead = null; facing = 1;
+    if (exitT < .35) {
+      const u = ease(exitT / .35);
+      frameT += dt * 7;
+      pose = Math.floor(frameT) % 2 ? 'swim2' : 'swim1';
+      sx = lerp(SWIM_END_X, SWIM_END_X + 120, u);
+      sy = lerp(exitDepth, SURFACE - 24, u);
+      rot = -28 * u;
+    } else if (exitT < .78) {
+      const u = (exitT - .35) / .43;
+      const x0 = SWIM_END_X + 120 + 123, y0 = SURFACE, x1 = LAND_X + 42, y1 = 600 - 75;
+      const cx = lerp(x0, x1, u), cy = lerp(y0, y1, u) - Math.sin(u * Math.PI) * 230;
+      if (u < .82) { pose = 'dive'; rot = lerp(-55, 25, u); }
+      else { pose = 'stand'; rot = 0; }
+      const [w, h] = POSE_SIZE[pose];
+      sx = cx - w / 2; sy = cy - h / 2;
+    } else {
+      pose = 'stand'; rot = 0;
+      sx = LAND_X; sy = 600 - 150 - Math.max(0, Math.sin(simT * 5)) * 10 * (exitT >= 1 ? 1 : 0);
+    }
+    if (prevExitT < .35 && exitT >= .35) splash(SWIM_END_X + 250, 18);
+  } else exitDepth = null;
+  prevExitT = exitT;
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i];
+    d.vy += 900 * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+    d.el.style.left = d.x + 'px'; d.el.style.top = d.y + 'px';
+    if (d.vy > 0 && d.y > SURFACE + 6) { d.el.remove(); drops.splice(i, 1); }
+  }
+
   hoops.forEach(h => { if (h.state === 'miss' && (h.flash -= dt) <= 0) { h.state = 'idle'; paintHoop(h, 'idle'); } });
   for (let i = popups.length - 1; i >= 0; i--) {
     const p = popups[i];
@@ -726,7 +831,7 @@ function step(dt) {
 
   // camera
   const camUnder = innerWidth < 700 ? 640 : CAM_UNDER;
-  const camY = camUnder * ease(clamp((diveT - .35) / .6, 0, 1));
+  const camY = camUnder * ease(clamp((diveT - .35) / .6, 0, 1)) * (1 - ease(clamp((exitT - .2) / .5, 0, 1)));
   const camX0 = Math.max(0, 380 - viewW * .4);
   const anchor = viewW < 700 ? .18 : .32;
   const camX = clamp(Math.max(camX0, sx - viewW * anchor), 0, WORLD_W - viewW);
@@ -754,10 +859,14 @@ function step(dt) {
   });
   if (diveT < 1) near = -1;
   cards.forEach((c, i) => c.classList.toggle('show', i === near));
-  const atFinish = sx > SWIM_END_X - 200;
+  const atFinish = exitT > .85;
   outro.classList.toggle('show', atFinish);
   document.getElementById('outroScore').textContent = `Hoepels: ${hoopScore} van de ${hoops.length}${hoopScore === hoops.length ? ' — perfecte baan!' : ''}`;
-  const under = diveT >= 1 && !atFinish;
+  const under = diveT >= 1 && exitT === 0;
+  let zone = 0;
+  if (diveT >= 1) STATION_X.forEach((x, i) => { if (sx >= x - 600) zone = i + 1; });
+  if (exitT > .5) zone = ZONES.length - 1;
+  zoneBtns.forEach((b, i) => b.classList.toggle('on', i === zone));
   document.getElementById('controls').classList.toggle('show', under);
   document.getElementById('touchpad').classList.toggle('show', under);
   const n = visited.size;
