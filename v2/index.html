@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Creative Automation — Duik erin</title>
+<meta name="description" content="Een pixelgame-verkenning van het vak Creative Automation: scroll, duik en zwem langs alle onderdelen.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B1B2F;
+    --paper: #FFF8E7;
+    --red: #E8433A;
+    --red-d: #B8302A;
+    --yellow: #FFD23F;
+    --sky: #6EC6FF;
+    --water: #1D67C4;
+    --text-soft: #3A3A55;
+    --pixel: "Press Start 2P", monospace;
+    --body: "VT323", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: auto; }
+  body { background: var(--sky); color: var(--ink); font-family: var(--body); overflow-x: hidden; }
+  img, svg { image-rendering: pixelated; }
+
+  /* ---------- Stage ---------- */
+  #track { position: relative; }
+  .stage { position: fixed; inset: 0; overflow: hidden; background: #BDE7FF; }
+  #world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  #world > * { position: absolute; }
+  .px { image-rendering: pixelated; }
+
+  /* ---------- Pixel boxes (8-bit border pattern) ---------- */
+  .pxbox > .pxp { position: absolute; pointer-events: none; }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    position: fixed; z-index: 20; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: max(22px, env(safe-area-inset-top)) clamp(16px, 3vw, 40px) 0;
+    pointer-events: none;
+  }
+  .hud-right { display: flex; gap: 18px; }
+  .chip {
+    font: 12px/1 var(--pixel); letter-spacing: .02em;
+    padding: 10px 14px; background: #fff; color: var(--ink);
+    pointer-events: auto; text-decoration: none; white-space: nowrap;
+  }
+  .chip.logo { background: var(--ink); color: var(--yellow); }
+  .chip.score { background: var(--yellow); }
+  .chip.score b { font-weight: 400; display: inline-block; }
+  .chip.score.bump b { animation: bump .5s steps(3); }
+  @keyframes bump { 50% { transform: translateY(-4px) scale(1.3); } }
+  @media (max-width: 640px) {
+    .hud { padding-left: 14px; padding-right: 14px; }
+    .chip { font-size: 8px; padding: 8px 9px; }
+    .chip.lane { display: none; }
+  }
+
+  /* ---------- Dialogs ---------- */
+  .dialog {
+    position: fixed; z-index: 15;
+    background: var(--paper); color: var(--ink);
+    padding: 26px 30px 26px;
+    width: min(620px, calc(100vw - 48px));
+    opacity: 0; visibility: hidden;
+    transition: opacity .25s steps(4), transform .25s steps(4), visibility .25s;
+    transform: translateY(12px);
+  }
+  .dialog.show { opacity: 1; visibility: visible; transform: none; }
+  .dialog .tag {
+    display: inline-block; font: 10px/1 var(--pixel); color: #fff; background: var(--red);
+    padding: 8px 10px; margin: 0 0 18px 3px;
+  }
+  .dialog h1, .dialog h2 { font: 36px/46px var(--pixel); letter-spacing: -.02em; }
+  .dialog h2 { font-size: 26px; line-height: 34px; }
+  .dialog h2 em { font-style: normal; display: block; font-size: 14px; line-height: 22px; margin-top: 8px; color: var(--accent, var(--red)); }
+  .dialog p { margin-top: 16px; font: 26px/28px var(--body); color: var(--text-soft); }
+  .dialog .tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px 14px; }
+  .dialog .tags span { font: 9px/1 var(--pixel); background: #fff; padding: 8px 9px; }
+  .actions { margin-top: 22px; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .btn {
+    font: 14px/1 var(--pixel); color: var(--ink); background: var(--yellow);
+    padding: 16px 20px; border: 0; cursor: pointer; text-decoration: none; display: inline-block;
+  }
+  .btn:hover { background: #FFE27A; }
+  .btn:active { transform: translate(2px, 2px); }
+  .btn.white { background: #fff; }
+  .hint { font: 22px/22px var(--body); color: #5A5A78; }
+  .blink { animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #intro { left: 43%; top: 100px; }
+  #intro .tail { position: absolute; left: -36px; top: 300px; width: 32px; height: 40px; }
+  .card { right: clamp(16px, 4vw, 64px); top: 104px; width: min(500px, calc(100vw - 48px)); }
+  #outro { left: 50%; top: 110px; transform: translate(-50%, 12px); text-align: center; }
+  #outro.show { transform: translate(-50%, 0); }
+  #outro .actions { justify-content: center; }
+  @media (max-width: 900px) {
+    #intro { left: 18px; right: 18px; top: auto; bottom: 18px; width: auto; padding: 16px 18px; }
+    #intro .tail { display: none; }
+    #intro h1 { font-size: 18px; line-height: 24px; }
+    #intro p { font-size: 18px; line-height: 18px; margin-top: 10px; }
+    .actions { margin-top: 14px; gap: 12px; }
+    .btn { font-size: 11px; padding: 12px 14px; }
+    .hint { font-size: 18px; line-height: 18px; }
+    .card { left: 18px; right: 18px; top: auto; bottom: 18px; width: auto; padding: 16px 18px; }
+    .card h2 { font-size: 15px; line-height: 22px; }
+    .card h2 em { font-size: 10px; line-height: 16px; margin-top: 4px; }
+    .card p { font-size: 18px; line-height: 18px; margin-top: 8px; }
+    .dialog .tags { margin-top: 10px; gap: 8px 10px; }
+    .dialog .tags span { font-size: 7px; padding: 6px 7px; }
+    .dialog .tag { font-size: 8px; padding: 6px 8px; }
+    .dialog .tag { margin-bottom: 12px; }
+    #outro { width: calc(100vw - 40px); padding: 22px; }
+    #outro h2 { font-size: 20px; line-height: 30px; }
+  }
+  @media (max-width: 900px) and (max-height: 700px) { #intro p { display: none; } }
+
+  .loading { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; background: var(--ink); color: var(--yellow); font: 14px var(--pixel); transition: opacity .3s steps(3), visibility .3s; }
+  .loading.done { opacity: 0; visibility: hidden; }
+
+  @media (prefers-reduced-motion: reduce) { .blink { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="stage" aria-hidden="true"><div id="world"></div></div>
+
+<header class="hud">
+  <a class="chip logo" href="../index.html" title="Terug naar de eerste versie">CREATIVE AUTOMATION</a>
+  <div class="hud-right">
+    <span class="chip lane">LANE 01</span>
+    <span class="chip score" id="score"><b><svg width="14" height="14" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" style="vertical-align:-2px"><path fill="#1B1B2F" d="M3 0h1v2h3v1h-1v1h-1v1h1v2h-1v-1h-1v-1h-1v1h-1v1h-1v-2h1v-1h-1v-1h-1v-1h3z"/></svg></b> <span id="scoreN">0</span>/5 ONDERDELEN</span>
+  </div>
+</header>
+
+<section class="dialog show" id="intro" aria-labelledby="introTitle">
+  <svg class="tail" viewBox="0 0 32 40" shape-rendering="crispEdges" aria-hidden="true">
+    <rect x="24" y="0" width="8" height="40" fill="#1B1B2F"/><rect x="28" y="4" width="4" height="32" fill="#FFF8E7"/>
+    <rect x="16" y="8" width="8" height="24" fill="#1B1B2F"/><rect x="20" y="12" width="8" height="16" fill="#FFF8E7"/>
+    <rect x="8" y="16" width="8" height="8" fill="#1B1B2F"/><rect x="12" y="16" width="8" height="8" fill="#FFF8E7"/>
+    <rect x="0" y="16" width="8" height="8" fill="#1B1B2F"/>
+  </svg>
+  <span class="tag">LEVEL 01 — DE STARTBLOKKEN</span>
+  <h1 id="introTitle">CREATIVE<br>AUTOMATION</h1>
+  <p>Creative Automation leert je hoe je als digitale vormgever repetitief werk automatiseert en AI inzet als creatieve assistent. Je werkt minder met de hand, produceert meer varianten en houdt toch de controle over het design. Doorheen het semester werk je aan een periodeopdracht: een volledige marketingcampagne voor een product, van briefing tot afgewerkte content.</p>
+  <div class="actions">
+    <button class="btn" id="diveBtn"><span class="blink">▼</span> SCROLL OM TE DUIKEN</button>
+    <span class="hint">5 onderdelen wachten<br>onder water</span>
+  </div>
+</section>
+
+<div id="cards"></div>
+
+<section class="dialog" id="outro" aria-labelledby="outroTitle">
+  <span class="tag" style="background:#1F8A5B">FINISH</span>
+  <h2 id="outroTitle">BAAN UITGEZWOMMEN!</h2>
+  <p>Je kwam alle onderdelen van Creative Automation tegen: van acties en batch tot automatische welkomstmails.</p>
+  <div class="actions">
+    <button class="btn" id="againBtn">▲ OPNIEUW DUIKEN</button>
+    <a class="btn white" href="../index.html">NAAR DE SITE</a>
+  </div>
+</section>
+
+<div id="track"></div>
+<div class="loading" id="loading">LOADING…</div>
+
+<script>
+/* =========================================================
+   Content
+   ========================================================= */
+const STATIONS = [
+  { num: '01', title: 'BEELDBEWERKING', sub: 'acties & batch', accent: '#E8433A',
+    text: "Je neemt Photoshop-acties op die een reeks bewerkingen onthouden: resizen, achtergronden uitbreiden met generative fill, een logo plaatsen en exporteren. Met batch-verwerking pas je die actie in één keer toe op een volledige map productfoto's. Zo verwerk je tientallen beelden consistent, zonder ze één voor één te openen.",
+    tags: ['Photoshop', 'Acties', 'Generative fill', 'Batch'] },
+  { num: '02', title: 'SOCIAL MEDIA', sub: 'Figma automation', accent: '#3B2BFF',
+    text: 'In Figma Buzz bouw je templates voor verschillende formaten, zoals Instagram-posts, stories en display-banners. Via bulk create vul je die templates automatisch met data uit een CSV- of XLSX-bestand: titels, taglines, call-to-actions en afbeeldingen. Eén spreadsheet levert zo een volledige campagne op in alle formaten, met een consistent design.',
+    tags: ['Figma Buzz', 'Templates', 'Bulk create', 'CSV / XLSX'] },
+  { num: '03', title: 'CONTENT GENERATIE', sub: 'Weave & Claude Cowork', accent: '#D6337F',
+    text: 'Je genereert beelden en video met AI-tools zoals Weave, en leert hoe je met goede prompts een consistente stijl bewaakt. Met Claude Cowork laat je AI zelfstandig taken uitvoeren op je eigen bestanden: teksten schrijven, documenten opmaken en content plannen. Je ontdekt waar AI je werk versnelt en waar je zelf moet bijsturen.',
+    tags: ['Weave', 'Prompting', 'Beeld & video', 'Claude Cowork'] },
+  { num: '04', title: 'VIBE CODING', sub: '& web', accent: '#1F8A5B',
+    text: 'Met Claude Code bouw je websites en tools door in gewone taal te beschrijven wat je wil. Je breidt Claude uit met skills, en via de Figma MCP-koppeling laat je Claude ontwerpen genereren in Figma en designs omzetten naar HTML en CSS. Je bouwt zelfs je eigen Figma-plugin. Je websites zet je online met GitHub Pages.',
+    tags: ['Claude Code', 'Skills', 'Figma MCP', 'Figma-plugin', 'GitHub Pages'] },
+  { num: '05', title: 'E-MAILMARKETING', sub: '& newsletters', accent: '#C98500',
+    text: 'In MailerLite bouw je inschrijvingsformulieren die je op een website plaatst, ontwerp je e-mailcampagnes en zet je automatisatieflows op: een nieuwe inschrijver krijgt bijvoorbeeld automatisch een reeks welkomstmails. Zo leer je hoe merken hun publiek opbouwen en blijven bereiken.',
+    tags: ['MailerLite', 'Formulieren', 'Campagnes', 'Automatisatieflows'] },
+];
+
+/* =========================================================
+   8-bit pixel border + shadow pattern (see 8-bit-pixel-art-patterns skill):
+   corner pixels inside, edge bars outside (notched corners), shine/shade bands,
+   and a stepped drop shadow made of the same notched shape shifted down-right.
+   ========================================================= */
+function pixelize(el, { P = 4, color = '#1B1B2F', shine = true, drop = 1 } = {}) {
+  el.classList.add('pxbox');
+  if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+  const add = css => { const d = document.createElement('div'); d.className = 'pxp'; Object.assign(d.style, css); el.appendChild(d); };
+  const p = P + 'px';
+  if (shine) {
+    add({ left: 0, top: 0, width: '100%', height: p, background: 'rgba(255,255,255,.45)' });
+    add({ left: 0, top: p, width: 2 * P + 'px', height: p, background: 'rgba(255,255,255,.45)' });
+    add({ left: 0, bottom: 0, width: '100%', height: p, background: 'rgba(27,27,47,.2)' });
+    add({ right: 0, bottom: p, width: 2 * P + 'px', height: p, background: 'rgba(27,27,47,.2)' });
+  }
+  // corner pixels
+  add({ left: 0, top: 0, width: p, height: p, background: color });
+  add({ right: 0, top: 0, width: p, height: p, background: color });
+  add({ left: 0, bottom: 0, width: p, height: p, background: color });
+  add({ right: 0, bottom: 0, width: p, height: p, background: color });
+  // edge bars
+  add({ left: p, right: p, top: -P + 'px', height: p, background: color });
+  add({ left: p, right: p, bottom: -P + 'px', height: p, background: color });
+  add({ top: p, bottom: p, left: -P + 'px', width: p, background: color });
+  add({ top: p, bottom: p, right: -P + 'px', width: p, background: color });
+  // stepped drop shadow
+  for (let k = 1; k <= drop; k++) {
+    const o = P * k;
+    add({ top: P + o + 'px', bottom: P - o + 'px', right: -(P + o) + 'px', width: p, background: '#1B1B2F' });
+    add({ left: P + o + 'px', right: P - o + 'px', bottom: -(P + o) + 'px', height: p, background: '#1B1B2F' });
+  }
+  if (drop) {
+    const o = P * drop;
+    add({ right: -o + 'px', bottom: -o + 'px', width: o + 'px', height: P + o + 'px', background: '#1B1B2F' });
+    add({ right: -o + 'px', bottom: -o + 'px', width: P + o + 'px', height: o + 'px', background: '#1B1B2F' });
+  }
+  return el;
+}
+
+/* =========================================================
+   Pixel sprites (same maps as the Figma components)
+   ========================================================= */
+const PAL = { k: '#1B1B2F', s: '#F4B183', S: '#D98E5E', c: '#E8433A', C: '#B8302A', g: '#FFD23F', b: '#2A3B8F', B: '#1C2A66',
+  w: '#FFFFFF', W: '#D4ECFF', y: '#FFD23F', Y: '#FFF1A8', o: '#F59E0B', r: '#E8433A', R: '#B8302A', l: '#BFE6FF' };
+function pixelSvg(rows, scale) {
+  const h = rows.length, w = Math.max(...rows.map(r => r.length));
+  let rects = '';
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (PAL[ch]) rects += `<rect x="${x * scale}" y="${y * scale}" width="${scale}" height="${scale}" fill="${PAL[ch]}"/>`;
+  }));
+  return `<svg width="${w * scale}" height="${h * scale}" viewBox="0 0 ${w * scale} ${h * scale}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">${rects}</svg>`;
+}
+const svgUri = svg => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+const POSES = {
+  stand: ['....kkkkk.....', '...kccccck....', '..kcccccCck...', '..kcccgggggk..', '..kCssskgkgk..', '..ksssssssssk.', '..kssssssssk..', '...kSssssk....', '....kssk......', '..kkssssskk...', '.kssssssssk...', '.ksskssssssk..', '.ksskssssssk..', '.ksskbbbbbbk..', '.kssbbbbbbbk..', '..kkbbbbBbbk..', '...kbbbbBbk...', '...ksssssk....', '...kssskssk...', '...kssk.ksk...', '...kssk.ksk...', '...kssk.ksk...', '...kssk.kssk..', '..kksskkksssk.', '..kkkkk.kkkkk.'],
+  dive: ['...........................kkkk.......', '..........................kccccCk.....', 'kkk...kkkkkkkkkkkkkkkkkkkkccccccCkkkkk', 'kssk.kssssssbbbbbbbsssssskcccgggkssssk', 'kssskssssssbbbbbbbbbssssssksssggkssssk', 'kkk..kkkkkkkkkkkkkkkkkkkkkkkkkkk.kkkk.'],
+  swim1: ['...........................kkkk..........', '..........................kccccCk........', '.kk......kkkkkkkkkkkkkkkkkccccccCk.......', 'ksskk...kssssssbbbbbbbssskcccgggkkkkkkkk.', '.kssskkkssssssbbbbbbbbbsssssssggkssssssk.', '..kkkk.kkkkkkkkkkkkkkksssskkkkkkkkkkkkk..', '......................kssk...............', '.......................kssk..............', '........................kk...............'],
+  swim2: ['..................kkk......kkkk..........', '.................ksssk....kccccCk........', '..................kssk...kccccccCk.......', '...................ksskkkcccgggk.........', '..kk...kkkkkkkkkkkkkssssssssggk..........', '.kssk.ksssssbbbbbbbbsssssssssk...........', 'kssskkksssssbbbbbbbbbsssssssk............', '.kk...kkkkkkkkkkkkkkkkkkkkkk.............', '.......kssk..............................', '........kk...............................'],
+};
+const CLOUD = ['.....wwww.......', '...wwwwwwww.....', '..wwwwwwwwwww...', '.wwwwwwwwwwwwww.', 'wwwwwwwwwwwwwwww', '.WWWWWWWWWWWWWW.'];
+const SUN = ['...yyyy...', '.yyYYyyyy.', '.yYYyyyyy.', 'yyYyyyyyyy', 'yyyyyyyyyy', 'yyyyyyyyoy', 'yyyyyyyyoy', '.yyyyyyoo.', '.yyyyooyy.', '...yyyy...'];
+const BUBBLE = ['.ll.', 'lw.l', 'l..l', '.ll.'];
+const ENVELOPE = ['kkkkkkkkkk', 'kwkwwwwkwk', 'kwwkwwkwwk', 'kwwwkkwwwk', 'kwwwwwwwwk', 'kkkkkkkkkk'];
+
+/* =========================================================
+   World layout (design units; the stage is 900 units tall)
+   ========================================================= */
+const VIEW_H = 900;
+const SURFACE = 620;            // water surface y
+const FLOOR = 1376;             // pool floor y
+const WORLD_H = 2400;            // floor and walls continue below the view on tall phones
+const CAM_UNDER = 520;          // camera y when underwater
+const SWIM_Y = 1040;            // swimmer top y while swimming
+const STATION_X = [1800, 3000, 4200, 5400, 6600];
+const FINISH_X = 7800;          // far pool wall
+const WORLD_W = FINISH_X + 900;
+const DIVE_SCROLL = 700;        // px of scroll used for the dive
+const SWIM_START_X = 720;       // swimmer x when the dive ends
+const SWIM_END_X = FINISH_X - 330;
+
+const world = document.getElementById('world');
+world.style.width = WORLD_W + 'px';
+world.style.height = WORLD_H + 'px';
+const el = (cls, css = {}, html = '') => {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  Object.assign(d.style, css);
+  if (html) d.innerHTML = html;
+  world.appendChild(d);
+  return d;
+};
+const box = (x, y, w, h, bg, extra = {}) => el('', { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', background: bg, ...extra });
+
+/* ---- sky ---- */
+[['#6EC6FF', 0, 140], ['#86D0FF', 140, 120], ['#9FDBFF', 260, 120], ['#B4E4FF', 380, 120], ['#C9EDFF', 500, 120]]
+  .forEach(([c, y, h]) => box(0, y, WORLD_W, h, c));
+el('px', { left: '470px', top: '120px' }, pixelSvg(SUN, 8));
+const clouds = [];
+for (let i = 0; i < 18; i++) {
+  const s = [8, 6, 10][i % 3];
+  const c = el('px', { left: (i * 470 + (i % 4) * 90) + 'px', top: (50 + (i * 97) % 330) + 'px', opacity: .95 }, pixelSvg(CLOUD, s));
+  clouds.push({ el: c, x: i * 470 + (i % 4) * 90, speed: 4 + (i % 3) * 3 });
+}
+
+/* ---- deck + starting block ---- */
+box(0, 600, 476, WORLD_H - 600, '#EFE3C2', {
+  backgroundImage: 'linear-gradient(#D6C59B 0 0), repeating-linear-gradient(90deg, transparent 0 40px, #D6C59B 40px 44px), repeating-linear-gradient(0deg, transparent 0 44px, #D6C59B 44px 48px)',
+  backgroundSize: '100% 4px, auto, auto', backgroundRepeat: 'no-repeat, repeat, repeat', backgroundPosition: '0 16px, 0 0, 0 0'
+});
+box(0, 600, 476, 16, '#FAF4E2');
+box(0, 616, 476, 4, '#CDBB8E');
+box(460, 620, 16, WORLD_H - 620, '#C9B583');
+box(404, 640, 8, 120, '#9AA4B8'); box(436, 640, 8, 120, '#9AA4B8');
+[664, 704, 744].forEach(y => box(404, y, 40, 6, '#9AA4B8'));
+const block = box(312, 512, 136, 88, '#fff');
+block.innerHTML = '<div style="position:absolute;left:0;top:0;right:0;height:16px;background:#E8433A"></div><div style="position:absolute;left:0;right:0;top:34px;text-align:center;font:28px/1 var(--pixel)">1</div>';
+pixelize(block, { P: 4 });
+
+/* ---- pool ---- */
+const POOL_W = FINISH_X - 476;
+[['#2E8BEA', 620, 70], ['#2479DA', 690, 110], ['#1D67C4', 800, 150], ['#1756AA', 950, 170], ['#124A97', 1120, 140], ['#0F3F84', 1260, 116]]
+  .forEach(([c, y, h]) => box(476, y, POOL_W, h, c));
+// floor: dark tiles + lane line
+box(476, FLOOR, POOL_W, WORLD_H - FLOOR, '#0C356E', { backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 44px, #0A2C5C 44px 48px)' });
+box(476, FLOOR - 12, POOL_W, 12, '#0A2A57');
+// surface sparkle line
+box(476, 626, POOL_W, 4, 'transparent', { backgroundImage: 'repeating-linear-gradient(90deg, #9FD8FF 0 16px, transparent 16px 56px)' });
+// light rays
+const rays = [];
+for (let x = 600; x < FINISH_X; x += 330) {
+  const r = box(x, 640, 40, FLOOR - 640, '#fff', { opacity: .1 });
+  rays.push({ el: r, x, ph: x * .01 });
+}
+// lane rope with alternating floats
+{
+  const floatsSvg = `<svg width="72" height="24" viewBox="0 0 72 24" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="0" y="10" width="72" height="4" fill="#F5F5F5"/>${pixelSvg(['.rrr.', 'rrrrr', 'RRRRR', '.RRR.'], 6).replace(/<\/?svg[^>]*>/g, '')}<g transform="translate(36 0)">${pixelSvg(['.www.', 'wwwww', 'WWWWW', '.WWW.'], 6).replace(/<\/?svg[^>]*>/g, '').replace(/#D4ECFF/g, '#D4ECFF')}</g></svg>`;
+  box(476, 606, POOL_W, 24, 'transparent', { backgroundImage: svgUri(floatsSvg), backgroundRepeat: 'repeat-x' });
+}
+// teaser sign at the start
+{
+  const t = el('', { left: '1180px', top: '770px', font: '12px/1 var(--pixel)', color: '#BFE6FF', background: 'rgba(10,42,87,.55)', padding: '12px 16px', whiteSpace: 'nowrap' }, '01 BEELDBEWERKING &gt;&gt;');
+  pixelize(t, { P: 3, color: '#9FD8FF', shine: false, drop: 0 });
+}
+
+/* ---- far wall + finish ---- */
+box(FINISH_X, 600, WORLD_W - FINISH_X, WORLD_H - 600, '#EFE3C2', { backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 40px, #D6C59B 40px 44px), repeating-linear-gradient(0deg, transparent 0 44px, #D6C59B 44px 48px)' });
+box(FINISH_X, 600, WORLD_W - FINISH_X, 16, '#FAF4E2');
+box(FINISH_X, 620, 16, WORLD_H - 620, '#C9B583');
+box(FINISH_X - 6, 900, 12, 300, '#FFD23F', { backgroundImage: 'repeating-linear-gradient(0deg, #FFD23F 0 24px, #1B1B2F 24px 48px)' }); // touch pad
+box(FINISH_X + 160, 300, 8, 300, '#9AA4B8');
+el('px', { left: (FINISH_X + 168) + 'px', top: '300px' }, pixelSvg(['kkkkkkkkkkkk', 'kwwkkwwkkwwk', 'kkkwwkkwwkkk', 'kwwkkwwkkwwk', 'kkkwwkkwwkkk', 'kwwkkwwkkwwk', 'kkkkkkkkkkkk'].map(r => r.replace(/k/g, 'k')), 8));
+{
+  const f = el('', { left: (FINISH_X + 260) + 'px', top: '420px', font: '22px/1 var(--pixel)', background: '#fff', padding: '16px 20px' }, 'FINISH');
+  pixelize(f, { P: 4 });
+}
+
+/* ---- stations: signpost + pixel scene on the pool floor ---- */
+const stationFx = [];
+STATIONS.forEach((st, i) => {
+  const x = STATION_X[i];
+  // signpost
+  box(x - 40, FLOOR - 260, 8, 260, '#9AA4B8');
+  const sign = el('', { left: (x - 110) + 'px', top: (FLOOR - 330) + 'px', width: '150px', background: '#FFF8E7', padding: '12px 12px 10px', textAlign: 'left' },
+    `<div style="font:22px/1 var(--pixel);color:${st.accent}">${st.num}</div><div style="margin-top:8px;font:8px/1.5 var(--pixel)">${st.title}</div>`);
+  pixelize(sign, { P: 4, drop: 1 });
+  stationFx.push(buildScene(i, x + 80));
+});
+
+function buildScene(i, x) {
+  const fx = { update: () => {} };
+  const base = FLOOR;
+  if (i === 0) {           // photo stack, processed one by one
+    const photos = [];
+    for (let k = 0; k < 4; k++) {
+      const p = el('', { left: (x + k * 34) + 'px', top: (base - 150 - k * 22) + 'px', width: '150px', height: '110px', background: '#E8433A', transition: 'background .2s steps(2)' },
+        '<div style="position:absolute;left:55px;top:30px;width:40px;height:40px;background:#fff;opacity:.7"></div><div class="logo" style="position:absolute;right:10px;bottom:10px;font:8px/1 var(--pixel);background:#1B1B2F;color:#FFF8E7;padding:5px;visibility:hidden">LOGO</div>');
+      pixelize(p, { P: 4, drop: 0 });
+      photos.push(p);
+    }
+    const act = el('', { left: (x - 70) + 'px', top: (base - 70) + 'px', font: '10px/1 var(--pixel)', background: '#1B1B2F', color: '#D4F25A', padding: '10px' }, '▶ BATCH');
+    pixelize(act, { P: 3, color: '#D4F25A', shine: false, drop: 0 });
+    let last = -1;
+    fx.update = t => {
+      const c = Math.floor(t / .5) % (photos.length + 3);
+      if (c === last) return; last = c;
+      photos.slice().reverse().forEach((p, k) => {
+        const done = k < c;
+        p.style.background = done ? '#3B2BFF' : '#E8433A';
+        p.querySelector('.logo').style.visibility = done ? 'visible' : 'hidden';
+      });
+    };
+  }
+  if (i === 1) {           // spreadsheet → three formats
+    const rows = [['ZOMER DROP', 'SHOP NU', '#3B2BFF'], ['NIEUW: MINT', 'ONTDEK', '#1F8A5B'], ['LAATSTE KANS', 'BESTEL', '#E8433A']];
+    const sheet = el('', { left: (x - 20) + 'px', top: (base - 150) + 'px', width: '150px', background: '#fff', font: '7px/1 var(--pixel)' });
+    sheet.innerHTML = '<div style="background:#1B1B2F;color:#FFF8E7;padding:8px">CAMPAGNE.CSV</div>' + rows.map(r => `<div class="r" style="padding:8px;border-top:2px solid #e5e5e5">${r[0]}</div>`).join('');
+    pixelize(sheet, { P: 3, drop: 0 });
+    const mk = (dx, w, h, label) => {
+      const f = el('', { left: (x + dx) + 'px', top: (base - h - 10) + 'px', width: w + 'px', height: h + 'px', background: '#3B2BFF', color: '#fff', padding: '10px', font: '8px/1.4 var(--pixel)', transition: 'background .2s steps(2)' },
+        `<div style="opacity:.7">${label}</div><div class="t" style="margin-top:8px;font-size:10px">ZOMER DROP</div><div class="c" style="position:absolute;left:10px;bottom:10px;background:#fff;color:#1B1B2F;padding:4px 6px">SHOP NU</div>`);
+      pixelize(f, { P: 3, drop: 0 });
+      return f;
+    };
+    const fmts = [mk(170, 120, 120, 'POST'), mk(310, 90, 170, 'STORY'), mk(420, 200, 80, 'BANNER')];
+    let last = -1;
+    fx.update = t => {
+      const r = Math.floor(t / 1.4) % rows.length;
+      if (r === last) return; last = r;
+      sheet.querySelectorAll('.r').forEach((d, k) => { d.style.background = k === r ? '#D4F25A' : '#fff'; });
+      fmts.forEach(f => { f.style.background = rows[r][2]; f.querySelector('.t').textContent = rows[r][0]; f.querySelector('.c').textContent = rows[r][1]; });
+    };
+  }
+  if (i === 2) {           // prompt → generated tiles
+    const prompt = 'productfoto, zacht ochtendlicht, koraal palet, consistente stijl';
+    const bar = el('', { left: (x - 20) + 'px', top: (base - 230) + 'px', width: '420px', background: '#fff', padding: '10px 12px', font: '20px/1 var(--body)', color: '#1B1B2F', minHeight: '58px' });
+    pixelize(bar, { P: 3, drop: 0 });
+    const txt = document.createElement('span'); bar.appendChild(txt);
+    const tiles = [['#FFB3D9', '#E8433A'], ['#FFD2C4', '#D6337F'], ['#FFF1A8', '#E8433A'], ['#FFB3D9', '#9B2A12']].map(([a, b], k) => {
+      const t = el('', { left: (x + k * 104) + 'px', top: (base - 130) + 'px', width: '88px', height: '110px', background: `linear-gradient(${a} 0 33%, ${b} 33% 66%, #1B1B2F33 66%)`, visibility: 'hidden' });
+      t.style.backgroundImage = `linear-gradient(${a} 0 34%, ${b} 34% 67%, ${b} 67%)`;
+      pixelize(t, { P: 3, drop: 0 });
+      return t;
+    });
+    fx.update = t => {
+      const c = t % 7;
+      const n = Math.min(prompt.length, Math.floor(c * 18));
+      txt.textContent = '> ' + prompt.slice(0, n) + (Math.floor(t * 3) % 2 ? '▌' : ' ');
+      const shown = Math.max(0, Math.floor((c - 4) / .4));
+      tiles.forEach((tl, k) => { tl.style.visibility = k < shown ? 'visible' : 'hidden'; });
+    };
+  }
+  if (i === 3) {           // monitor with code typing
+    const lines = [['#D4F25A', '> maak een one-page site'], ['', ''], ['#FFB3D9', '<section class="hero">'], ['#FFF8E7', '  <h1>Zomer Drop</h1>'], ['#FFB3D9', '</section>'], ['', ''], ['#D4F25A', '[OK] online via GitHub Pages']];
+    const mon = el('', { left: x + 'px', top: (base - 250) + 'px', width: '340px', height: '200px', background: '#1B1B2F', padding: '14px 16px', font: '20px/22px var(--body)', color: '#fff', whiteSpace: 'pre' });
+    pixelize(mon, { P: 4, color: '#3A3A55', drop: 0 });
+    const code = document.createElement('div'); mon.appendChild(code);
+    box(x + 150, base - 50, 40, 40, '#3A3A55'); box(x + 110, base - 12, 120, 12, '#3A3A55');
+    const total = lines.reduce((n, l) => n + l[1].length + 1, 0);
+    let shown = -1;
+    fx.update = t => {
+      const n = Math.min(total, Math.floor((t % 8) * 26));
+      if (n === shown) return; shown = n;
+      let left = n, html = '';
+      for (const [c, s] of lines) { if (left <= 0) break; html += `<span style="color:${c || '#fff'}">${s.slice(0, left).replace(/</g, '&lt;')}</span>\n`; left -= s.length + 1; }
+      code.innerHTML = html;
+    };
+  }
+  if (i === 4) {           // automation flow with hopping envelope
+    const cols = [];
+    ['NIEUW', 'MAIL 1', 'MAIL 2', 'MAIL 3'].forEach((lbl, k) => {
+      const h = 50 + k * 40;
+      const c = el('', { left: (x + k * 110) + 'px', top: (base - h) + 'px', width: '80px', height: h + 'px', background: '#FFF8E7', font: '7px/1 var(--pixel)', textAlign: 'center', paddingTop: '10px' }, lbl);
+      pixelize(c, { P: 3, drop: 0 });
+      cols.push({ c, h, cx: x + k * 110 + 40 });
+    });
+    const env = el('px', {}, pixelSvg(ENVELOPE, 5));
+    fx.update = t => {
+      const n = cols.length - 1, seg = ((t * .7) % n + n) % n, k = Math.floor(seg), f = seg - k;
+      const a = cols[k], b = cols[k + 1];
+      const ex = a.cx + (b.cx - a.cx) * f - 25;
+      const ey = (base - a.h) + ((base - b.h) - (base - a.h)) * f - 40 - Math.sin(f * Math.PI) * 60;
+      env.style.left = ex + 'px'; env.style.top = ey + 'px';
+      cols.forEach((o, j) => { o.c.style.background = (j === k && f < .3) || (j === k + 1 && f > .7) ? '#FFD23F' : '#FFF8E7'; });
+    };
+  }
+  return fx;
+}
+
+/* ---- ambient + swimmer bubbles ---- */
+const bubbles = [];
+function spawnBubble(x, y, big = false) {
+  if (bubbles.length > 40) return;
+  const b = el('px', { left: x + 'px', top: y + 'px' }, pixelSvg(BUBBLE, big ? 5 : 3));
+  bubbles.push({ el: b, x, y, vy: 30 + Math.random() * 30, ph: Math.random() * 6 });
+}
+
+/* ---- swimmer ---- */
+const swimmer = el('', { left: 0, top: 0, transformOrigin: '50% 50%', zIndex: 5 });
+const poseEls = {};
+for (const [k, rows] of Object.entries(POSES)) {
+  const d = document.createElement('div');
+  d.className = 'px';
+  d.style.display = 'none';
+  d.innerHTML = pixelSvg(rows, 6);
+  swimmer.appendChild(d);
+  poseEls[k] = d;
+}
+const POSE_SIZE = { stand: [84, 150], dive: [228, 36], swim1: [246, 54], swim2: [246, 60] };
+let currentPose = null;
+function setPose(p) {
+  if (p === currentPose) return;
+  if (currentPose) poseEls[currentPose].style.display = 'none';
+  poseEls[p].style.display = 'block';
+  currentPose = p;
+}
+
+/* =========================================================
+   Scroll → world
+   ========================================================= */
+let scale = 1, viewW = 1440;
+const track = document.getElementById('track');
+const SWIM_DIST = SWIM_END_X - SWIM_START_X;
+function layout() {
+  scale = innerHeight / VIEW_H;
+  if (innerWidth < 700) scale = Math.min(scale, innerWidth / 700);   // phones: zoom out so the scene sits above the cards
+  viewW = innerWidth / scale;
+  track.style.height = (DIVE_SCROLL + SWIM_DIST * 1.1 + innerHeight) + 'px';
+}
+layout();
+addEventListener('resize', layout);
+
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t * t * (3 - 2 * t);
+
+let scrollShown = scrollY, lastScroll = scrollY, idle = 0, sinkY = SWIM_Y, sinkV = 0, frameT = 0, facing = 1;
+let visited = new Set(), activeCard = -1;
+
+// dive path: stand on block → arc through the air → glide down to swim depth
+function divePose(t) {
+  const standX = 380 - 42, standY = 512 - 150;
+  if (t < .12) return { pose: 'stand', x: standX, y: standY + (t / .12) * 10, rot: 0 };
+  if (t < .55) {
+    const u = (t - .12) / .43;
+    const x0 = 390, y0 = 470, x1 = 680, y1 = 660;
+    const x = lerp(x0, x1, u), y = lerp(y0, y1, u) - Math.sin(u * Math.PI) * 120;
+    const rot = lerp(-25, 40, u);
+    return { pose: 'dive', x: x - 114, y: y - 18, rot };
+  }
+  const u = ease((t - .55) / .45);
+  const x = lerp(680, SWIM_START_X + 123, u), y = lerp(660, SWIM_Y + 30, u);
+  return { pose: u < .5 ? 'dive' : 'swim1', x: x - 123, y: y - 27, rot: lerp(40, 0, u) };
+}
+
+const cardsEl = document.getElementById('cards');
+const cards = STATIONS.map(st => {
+  const d = document.createElement('section');
+  d.className = 'dialog card';
+  d.style.setProperty('--accent', st.accent);
+  d.innerHTML = `<span class="tag" style="background:${st.accent}">ONDERDEEL ${st.num} / 05</span><h2>${st.title}<em>${st.sub}</em></h2><p>${st.text}</p><div class="tags">${st.tags.map(t => `<span>${t}</span>`).join('')}</div>`;
+  cardsEl.appendChild(d);
+  pixelize(d, { P: 5, drop: 2 });
+  d.querySelectorAll('.tags span').forEach(s => pixelize(s, { P: 2, shine: false, drop: 0 }));
+  d.querySelector('.tag') && pixelize(d.querySelector('.tag'), { P: 3, color: '#1B1B2F', shine: false, drop: 0 });
+  return d;
+});
+const intro = document.getElementById('intro'), outro = document.getElementById('outro');
+pixelize(intro, { P: 6, drop: 2 });
+pixelize(intro.querySelector('.tag'), { P: 3, color: '#B8302A', shine: false, drop: 0 });
+pixelize(outro, { P: 6, drop: 2 });
+pixelize(outro.querySelector('.tag'), { P: 3, color: '#13573A', shine: false, drop: 0 });
+document.querySelectorAll('.btn').forEach(b => pixelize(b, { P: 4, drop: 1 }));
+document.querySelectorAll('.chip').forEach(c => pixelize(c, { P: 4, shine: !c.classList.contains('logo'), drop: 1 }));
+
+document.getElementById('diveBtn').addEventListener('click', () => scrollTo({ top: DIVE_SCROLL + 40, behavior: 'smooth' }));
+document.getElementById('againBtn').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+
+let prev = performance.now(), simT = 0;
+function step(dt) {
+  simT += dt;
+
+  // smooth scroll value
+  scrollShown += (scrollY - scrollShown) * Math.min(1, dt * 10);
+  if (Math.abs(scrollY - scrollShown) < .5) scrollShown = scrollY;
+  const s = scrollShown;
+  const moving = Math.abs(s - lastScroll) > .3;
+  const dir = Math.sign(s - lastScroll);
+  lastScroll = s;
+  idle = moving ? 0 : idle + dt;
+
+  let sx, sy, rot = 0, pose;
+  const diveT = clamp(s / DIVE_SCROLL, 0, 1);
+  if (diveT < 1) {
+    ({ x: sx, y: sy, rot, pose } = divePose(diveT));
+    sinkY = SWIM_Y; sinkV = 0;
+    if (diveT > .55 && moving && Math.random() < .3) spawnBubble(sx + 200, sy, true);
+  } else {
+    const d = (s - DIVE_SCROLL) / 1.1;
+    sx = SWIM_START_X + clamp(d, 0, SWIM_DIST);
+    // swim at depth while scrolling, sink to the floor when you stop
+    if (idle > .35 && sx < SWIM_END_X - 2) {
+      sinkV = Math.min(sinkV + dt * 40, 70);
+      sinkY = Math.min(sinkY + sinkV * dt, FLOOR - 60);
+    } else {
+      sinkV = 0;
+      sinkY += (SWIM_Y - sinkY) * Math.min(1, dt * 3);
+    }
+    sy = sinkY + Math.sin(simT * 2) * 4;
+    if (moving) {
+      frameT += dt * clamp(Math.abs(s - scrollY) * .05 + 4, 4, 9);
+      pose = Math.floor(frameT) % 2 ? 'swim2' : 'swim1';
+      if (dir) facing = dir;
+      if (Math.random() < .12) spawnBubble(sx + (facing > 0 ? 200 : 20), sy - 4);
+      rot = 0;
+    } else {
+      pose = 'swim1';
+      rot = sinkY < FLOOR - 61 ? 6 : 0;    // drifting down slightly nose-first
+      if (Math.random() < .02) spawnBubble(sx + (facing > 0 ? 200 : 20), sy - 4);
+    }
+  }
+  setPose(pose);
+  const [pw, ph] = POSE_SIZE[pose];
+  swimmer.style.left = sx + 'px';
+  swimmer.style.top = sy + 'px';
+  swimmer.style.width = pw + 'px'; swimmer.style.height = ph + 'px';
+  swimmer.style.transform = `scaleX(${diveT >= 1 ? facing : 1}) rotate(${rot}deg)`;
+
+  // camera
+  const camUnder = innerWidth < 700 ? 760 : CAM_UNDER;
+  const camY = camUnder * ease(clamp((diveT - .35) / .6, 0, 1));
+  const camX0 = Math.max(0, 380 - viewW * .4);
+  const anchor = viewW < 700 ? .18 : .32;
+  const camX = clamp(Math.max(camX0, sx - viewW * anchor), 0, WORLD_W - viewW);
+  world.style.transform = `scale(${scale}) translate(${-camX}px, ${-camY}px)`;
+
+  // ambient life
+  clouds.forEach(c => { c.x += c.speed * dt; if (c.x > WORLD_W) c.x = -200; c.el.style.left = c.x + 'px'; });
+  rays.forEach(r => { r.el.style.opacity = .07 + .05 * Math.sin(simT * .8 + r.ph); });
+  if (Math.random() < .08) spawnBubble(camX + Math.random() * viewW, FLOOR - 20);
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    const b = bubbles[i];
+    b.y -= b.vy * dt;
+    b.el.style.top = b.y + 'px';
+    b.el.style.left = (b.x + Math.round(Math.sin(simT * 3 + b.ph) * 2) * 3) + 'px';
+    if (b.y < SURFACE + 10) { b.el.remove(); bubbles.splice(i, 1); }
+  }
+  stationFx.forEach(f => f.update(simT));
+
+  // overlays
+  intro.classList.toggle('show', s < 160);
+  let near = -1;
+  STATION_X.forEach((x, i) => {
+    if (sx + 120 > x - 260) visited.add(i);
+    if (Math.abs(sx + 120 - (x + 120)) < 560) near = i;
+  });
+  if (diveT < 1) near = -1;
+  cards.forEach((c, i) => c.classList.toggle('show', i === near));
+  outro.classList.toggle('show', sx > SWIM_END_X - 200);
+  const n = visited.size;
+  const scoreN = document.getElementById('scoreN');
+  if (+scoreN.textContent !== n) {
+    scoreN.textContent = n;
+    const sc = document.getElementById('score');
+    sc.classList.remove('bump'); void sc.offsetWidth; sc.classList.add('bump');
+  }
+}
+function tick(now) {
+  step(clamp((now - prev) / 1000, 0, .05)); prev = now;
+  requestAnimationFrame(tick);
+}
+document.fonts.ready.then(() => document.getElementById('loading').classList.add('done'));
+setTimeout(() => document.getElementById('loading').classList.add('done'), 2500);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
