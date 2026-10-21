@@ -52,7 +52,8 @@
   .chip.logo { background: var(--ink); color: var(--yellow); }
   .chip.score { background: var(--yellow); }
   .chip.score b { font-weight: 400; display: inline-block; }
-  .chip.score.bump b { animation: bump .5s steps(3); }
+  .chip.score.bump b, .chip.hoops.bump svg { animation: bump .5s steps(3); }
+  .chip.hoops { background: #7CE36B; }
   @keyframes bump { 50% { transform: translateY(-4px) scale(1.3); } }
   @media (max-width: 640px) {
     .hud { padding-left: 14px; padding-right: 14px; }
@@ -120,6 +121,29 @@
   }
   @media (max-width: 900px) and (max-height: 700px) { #intro p { display: none; } }
 
+  /* ---------- Controls ---------- */
+  .controls {
+    position: fixed; z-index: 14; left: clamp(16px, 3vw, 40px); bottom: 28px;
+    background: var(--paper); padding: 12px 14px; font: 9px/1.9 var(--pixel); color: var(--ink);
+    opacity: 0; visibility: hidden; transition: opacity .25s steps(3), visibility .25s;
+  }
+  .controls.show { opacity: 1; visibility: visible; }
+  .controls kbd { font: 9px/1 var(--pixel); background: #fff; padding: 3px 5px; margin-right: 2px; box-shadow: 0 2px 0 var(--ink); }
+  .touchpad { position: fixed; z-index: 16; right: 16px; top: 34%; display: none; flex-direction: column; gap: 18px; }
+  .touchpad button {
+    width: 58px; height: 58px; border: 0; background: var(--yellow); display: grid; place-items: center;
+    touch-action: none; -webkit-user-select: none; user-select: none;
+  }
+  .touchpad button.on { background: #FFE27A; transform: translate(2px, 2px); }
+  .touchpad.show { display: flex; }
+  @media (hover: none), (max-width: 900px) { .controls { display: none; } }
+  @media (hover: hover) and (min-width: 901px) { .touchpad { display: none !important; } }
+  .chip .short { display: none; }
+  @media (max-width: 640px) {
+    .chip .full { display: none; } .chip .short { display: inline; }
+    .hud-right { gap: 12px; }
+  }
+
   .loading { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; background: var(--ink); color: var(--yellow); font: 14px var(--pixel); transition: opacity .3s steps(3), visibility .3s; }
   .loading.done { opacity: 0; visibility: hidden; }
 
@@ -131,10 +155,11 @@
 <div class="stage" aria-hidden="true"><div id="world"></div></div>
 
 <header class="hud">
-  <a class="chip logo" href="../index.html" title="Terug naar de eerste versie">CREATIVE AUTOMATION</a>
+  <a class="chip logo" href="../index.html" title="Terug naar de eerste versie"><span class="full">CREATIVE AUTOMATION</span><span class="short">CA</span></a>
   <div class="hud-right">
     <span class="chip lane">LANE 01</span>
-    <span class="chip score" id="score"><b><svg width="14" height="14" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" style="vertical-align:-2px"><path fill="#1B1B2F" d="M3 0h1v2h3v1h-1v1h-1v1h1v2h-1v-1h-1v-1h-1v1h-1v1h-1v-2h1v-1h-1v-1h-1v-1h3z"/></svg></b> <span id="scoreN">0</span>/5 ONDERDELEN</span>
+    <span class="chip hoops" id="hoopChip"><svg width="10" height="14" viewBox="0 0 5 7" shape-rendering="crispEdges" aria-hidden="true" style="vertical-align:-2px"><path fill="#1B1B2F" d="M1 0h3v1h1v5h-1v1h-3v-1h-1v-5h1zM1 1v5h3v-5z"/></svg> <span id="hoopN">0</span>/<span id="hoopT">10</span><span class="full"> HOEPELS</span></span>
+    <span class="chip score" id="score"><b><svg width="14" height="14" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" style="vertical-align:-2px"><path fill="#1B1B2F" d="M3 0h1v2h3v1h-1v1h-1v1h1v2h-1v-1h-1v-1h-1v1h-1v1h-1v-2h1v-1h-1v-1h-1v-1h3z"/></svg></b> <span id="scoreN">0</span>/5<span class="full"> ONDERDELEN</span></span>
   </div>
 </header>
 
@@ -156,10 +181,17 @@
 
 <div id="cards"></div>
 
+<div class="controls" id="controls"><kbd>W</kbd><kbd>S</kbd> HOGER / LAGER<br><kbd>D</kbd><kbd>A</kbd> VOORUIT / ACHTERUIT<br>OF GEWOON SCROLLEN</div>
+<div class="touchpad" id="touchpad">
+  <button id="tpUp" aria-label="Hoger zwemmen"><svg width="24" height="24" viewBox="0 0 6 6" shape-rendering="crispEdges"><path fill="#1B1B2F" d="M2 0h2v1h1v1h1v1h-2v3h-2v-3h-2v-1h1v-1h1z"/></svg></button>
+  <button id="tpDown" aria-label="Lager zwemmen"><svg width="24" height="24" viewBox="0 0 6 6" shape-rendering="crispEdges"><path fill="#1B1B2F" d="M2 0h2v3h2v1h-1v1h-1v1h-2v-1h-1v-1h-1v-1h2z"/></svg></button>
+</div>
+
 <section class="dialog" id="outro" aria-labelledby="outroTitle">
   <span class="tag" style="background:#1F8A5B">FINISH</span>
   <h2 id="outroTitle">BAAN UITGEZWOMMEN!</h2>
   <p>Je kwam alle onderdelen van Creative Automation tegen: van acties en batch tot automatische welkomstmails.</p>
+  <p id="outroScore"></p>
   <div class="actions">
     <button class="btn" id="againBtn">▲ OPNIEUW DUIKEN</button>
     <a class="btn white" href="../index.html">NAAR DE SITE</a>
@@ -460,6 +492,41 @@ function buildScene(i, x) {
   return fx;
 }
 
+/* ---- hoops: back arc behind the swimmer, front arc in front ---- */
+function hoopSvg(half, main, shade) {
+  const W = 14, H = 30, S = 6, cx = 7, cy = 15;
+  let rects = '';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const o = ((x + .5 - cx) / 7) ** 2 + ((y + .5 - cy) / 15) ** 2;
+    const i = ((x + .5 - cx) / 4.3) ** 2 + ((y + .5 - cy) / 12.3) ** 2;
+    if (o > 1 || i <= 1) continue;
+    if ((half === 'back') !== (x < cx)) continue;
+    const c = o > .78 ? shade : (i < 1.25 ? '#FFFFFF' : main);
+    rects += `<rect x="${x * S}" y="${y * S}" width="${S}" height="${S}" fill="${half === 'back' ? shade : c}"/>`;
+  }
+  return `<svg width="${W * S}" height="${H * S}" viewBox="0 0 ${W * S} ${H * S}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">${rects}</svg>`;
+}
+const HOOP_COLORS = { idle: ['#FFD23F', '#C98500'], done: ['#7CE36B', '#2F8F2A'], miss: ['#FF8A80', '#B8302A'] };
+const hoops = [[1250, 1000], [2300, 820], [2550, 1180], [3550, 950], [3800, 1210], [4750, 800], [5000, 1100], [5950, 1230], [6200, 900], [7150, 1050]]
+  .map(([x, cy]) => {
+    const back = el('px', { left: (x - 42) + 'px', top: (cy - 90) + 'px', zIndex: 4 });
+    const front = el('px', { left: (x - 42) + 'px', top: (cy - 90) + 'px', zIndex: 6 });
+    const h = { x, cy, back, front, state: 'idle', flash: 0 };
+    paintHoop(h, 'idle');
+    return h;
+  });
+function paintHoop(h, state) {
+  const [m, sh] = HOOP_COLORS[state];
+  h.back.innerHTML = hoopSvg('back', m, sh);
+  h.front.innerHTML = hoopSvg('front', m, sh);
+}
+document.getElementById('hoopT').textContent = hoops.length;
+const popups = [];
+function popup(x, y, text, color) {
+  const p = el('', { left: x + 'px', top: y + 'px', font: '22px/1 var(--pixel)', color, zIndex: 7, textShadow: '3px 3px 0 #1B1B2F', whiteSpace: 'nowrap' }, text);
+  popups.push({ el: p, y, life: 1 });
+}
+
 /* ---- ambient + swimmer bubbles ---- */
 const bubbles = [];
 function spawnBubble(x, y, big = false) {
@@ -507,7 +574,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = t => t * t * (3 - 2 * t);
 
-let scrollShown = scrollY, lastScroll = scrollY, idle = 0, sinkY = SWIM_Y, sinkV = 0, frameT = 0, facing = 1;
+let scrollShown = scrollY, lastScroll = scrollY, idle = 0, depth = SWIM_Y, vy = 0, onFloor = false, frameT = 0, facing = 1, prevHead = null, hoopScore = 0;
 let visited = new Set(), activeCard = -1;
 
 // dive path: stand on block → arc through the air → glide down to swim depth
@@ -546,12 +613,35 @@ pixelize(outro.querySelector('.tag'), { P: 3, color: '#13573A', shine: false, dr
 document.querySelectorAll('.btn').forEach(b => pixelize(b, { P: 4, drop: 1 }));
 document.querySelectorAll('.chip').forEach(c => pixelize(c, { P: 4, shine: !c.classList.contains('logo'), drop: 1 }));
 
+const input = { up: false, down: false, fwd: false, back: false };
+const KEYMAP = { arrowup: 'up', w: 'up', z: 'up', arrowdown: 'down', s: 'down', arrowright: 'fwd', d: 'fwd', arrowleft: 'back', a: 'back', q: 'back' };
+addEventListener('keydown', e => {
+  const k = KEYMAP[e.key.toLowerCase()];
+  if (!k) return;
+  // before the dive, ↓/→ start the dive like scrolling would
+  if (scrollY < DIVE_SCROLL && (k === 'down' || k === 'fwd')) { scrollTo({ top: DIVE_SCROLL + 40, behavior: 'smooth' }); e.preventDefault(); return; }
+  input[k] = true; e.preventDefault();
+});
+addEventListener('keyup', e => { const k = KEYMAP[e.key.toLowerCase()]; if (k) input[k] = false; });
+addEventListener('blur', () => { for (const k in input) input[k] = false; });
+[['tpUp', 'up'], ['tpDown', 'down']].forEach(([id, k]) => {
+  const b = document.getElementById(id);
+  const on = e => { e.preventDefault(); input[k] = true; b.classList.add('on'); };
+  const off = () => { input[k] = false; b.classList.remove('on'); };
+  b.addEventListener('pointerdown', on);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => b.addEventListener(t, off));
+  pixelize(b, { P: 4, drop: 1 });
+});
+pixelize(document.getElementById('controls'), { P: 4, drop: 1 });
+
 document.getElementById('diveBtn').addEventListener('click', () => scrollTo({ top: DIVE_SCROLL + 40, behavior: 'smooth' }));
 document.getElementById('againBtn').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
 
 let prev = performance.now(), simT = 0;
 function step(dt) {
   simT += dt;
+  if (input.fwd) scrollBy(0, 700 * dt);
+  if (input.back) scrollBy(0, -700 * dt);
 
   // smooth scroll value
   scrollShown += (scrollY - scrollShown) * Math.min(1, dt * 10);
@@ -566,31 +656,66 @@ function step(dt) {
   const diveT = clamp(s / DIVE_SCROLL, 0, 1);
   if (diveT < 1) {
     ({ x: sx, y: sy, rot, pose } = divePose(diveT));
-    sinkY = SWIM_Y; sinkV = 0;
+    depth = SWIM_Y; vy = 0; onFloor = false;
     if (diveT > .55 && moving && Math.random() < .3) spawnBubble(sx + 200, sy, true);
   } else {
     const d = (s - DIVE_SCROLL) / 1.1;
     sx = SWIM_START_X + clamp(d, 0, SWIM_DIST);
-    // swim at depth while scrolling, sink to the floor when you stop
-    if (idle > .35 && sx < SWIM_END_X - 2) {
-      sinkV = Math.min(sinkV + dt * 40, 70);
-      sinkY = Math.min(sinkY + sinkV * dt, FLOOR - 60);
+    // vertical swimming: W/S, arrows or the touch buttons; drift down when you stop scrolling
+    const MIN_D = SURFACE + 16, MAX_D = FLOOR - 66;
+    if (input.up) { vy = lerp(vy, -300, Math.min(1, dt * 8)); onFloor = false; }
+    else if (input.down) vy = lerp(vy, 300, Math.min(1, dt * 8));
+    else if (idle > .35 || onFloor) vy = vy < 0 ? lerp(vy, 0, Math.min(1, dt * 14)) : Math.min(vy + dt * 60, 70);
+    else vy = lerp(vy, 0, Math.min(1, dt * 14));
+    depth = clamp(depth + vy * dt, MIN_D, MAX_D);
+    if (depth >= MAX_D) { vy = 0; if (!input.up) onFloor = true; }
+    if (depth <= MIN_D && vy < 0) vy = 0;
+    const active = moving || input.up || input.down;
+    if (onFloor && !active) {
+      // standing on the pool floor
+      pose = 'stand'; sy = FLOOR - 156; rot = 0;
+      if (Math.random() < .015) spawnBubble(sx + 50, sy);
     } else {
-      sinkV = 0;
-      sinkY += (SWIM_Y - sinkY) * Math.min(1, dt * 3);
+      sy = depth + (onFloor ? 0 : Math.sin(simT * 2) * 4);
+      if (active) {
+        frameT += dt * (moving ? clamp(Math.abs(s - scrollY) * .05 + 4, 4, 9) : 6);
+        pose = Math.floor(frameT) % 2 ? 'swim2' : 'swim1';
+        if (dir) facing = dir;
+        if (Math.random() < .12) spawnBubble(sx + (facing > 0 ? 200 : 20), sy - 4);
+        rot = input.up ? -12 : input.down ? 12 : 0;
+      } else {
+        pose = 'swim1';
+        rot = 6;    // drifting down slightly nose-first
+        if (Math.random() < .02) spawnBubble(sx + (facing > 0 ? 200 : 20), sy - 4);
+      }
     }
-    sy = sinkY + Math.sin(simT * 2) * 4;
-    if (moving) {
-      frameT += dt * clamp(Math.abs(s - scrollY) * .05 + 4, 4, 9);
-      pose = Math.floor(frameT) % 2 ? 'swim2' : 'swim1';
-      if (dir) facing = dir;
-      if (Math.random() < .12) spawnBubble(sx + (facing > 0 ? 200 : 20), sy - 4);
-      rot = 0;
-    } else {
-      pose = 'swim1';
-      rot = sinkY < FLOOR - 61 ? 6 : 0;    // drifting down slightly nose-first
-      if (Math.random() < .02) spawnBubble(sx + (facing > 0 ? 200 : 20), sy - 4);
+    // hoops: passing the hoop's x with your body inside the opening scores
+    const head = sx + (facing > 0 ? 190 : 50), mid = depth + 27;
+    if (prevHead !== null && pose !== 'stand') {
+      hoops.forEach(h => {
+        if ((prevHead - h.x) * (head - h.x) > 0 || prevHead === head) return;
+        if (h.state === 'done') return;
+        if (Math.abs(mid - h.cy) < 70) {
+          h.state = 'done'; paintHoop(h, 'done'); hoopScore++;
+          popup(h.x - 20, h.cy - 130, '+1', '#7CE36B');
+          for (let k = 0; k < 6; k++) spawnBubble(h.x - 20 + Math.random() * 40, h.cy - 60 + Math.random() * 120, true);
+          const hc = document.getElementById('hoopChip');
+          document.getElementById('hoopN').textContent = hoopScore;
+          hc.classList.remove('bump'); void hc.offsetWidth; hc.classList.add('bump');
+        } else {
+          h.state = 'miss'; h.flash = .6; paintHoop(h, 'miss');
+          popup(h.x - 40, h.cy - 130, 'MIS!', '#FF8A80');
+        }
+      });
     }
+    prevHead = pose === 'stand' ? null : head;
+  }
+  hoops.forEach(h => { if (h.state === 'miss' && (h.flash -= dt) <= 0) { h.state = 'idle'; paintHoop(h, 'idle'); } });
+  for (let i = popups.length - 1; i >= 0; i--) {
+    const p = popups[i];
+    p.life -= dt * .8; p.y -= 40 * dt;
+    p.el.style.top = p.y + 'px'; p.el.style.opacity = Math.max(0, p.life);
+    if (p.life <= 0) { p.el.remove(); popups.splice(i, 1); }
   }
   setPose(pose);
   const [pw, ph] = POSE_SIZE[pose];
@@ -600,7 +725,7 @@ function step(dt) {
   swimmer.style.transform = `scaleX(${diveT >= 1 ? facing : 1}) rotate(${rot}deg)`;
 
   // camera
-  const camUnder = innerWidth < 700 ? 760 : CAM_UNDER;
+  const camUnder = innerWidth < 700 ? 640 : CAM_UNDER;
   const camY = camUnder * ease(clamp((diveT - .35) / .6, 0, 1));
   const camX0 = Math.max(0, 380 - viewW * .4);
   const anchor = viewW < 700 ? .18 : .32;
@@ -629,7 +754,12 @@ function step(dt) {
   });
   if (diveT < 1) near = -1;
   cards.forEach((c, i) => c.classList.toggle('show', i === near));
-  outro.classList.toggle('show', sx > SWIM_END_X - 200);
+  const atFinish = sx > SWIM_END_X - 200;
+  outro.classList.toggle('show', atFinish);
+  document.getElementById('outroScore').textContent = `Hoepels: ${hoopScore} van de ${hoops.length}${hoopScore === hoops.length ? ' — perfecte baan!' : ''}`;
+  const under = diveT >= 1 && !atFinish;
+  document.getElementById('controls').classList.toggle('show', under);
+  document.getElementById('touchpad').classList.toggle('show', under);
   const n = visited.size;
   const scoreN = document.getElementById('scoreN');
   if (+scoreN.textContent !== n) {
