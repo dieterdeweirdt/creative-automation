@@ -72,6 +72,14 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
 .lead{font-size:clamp(16px,1.35vw,18.5px);max-width:46ch;color:var(--ink);margin:0}
 .lead em{font-style:normal;font-weight:600}
 
+/* CORE principle (do 1) */
+.core{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;max-width:52ch;align-items:center}
+.core-t{font:500 13px/1 var(--f-mono);color:var(--mute);margin-right:2px}
+.core-t b{color:var(--ink)}
+.core span:not(.core-t){display:inline-flex;align-items:baseline;gap:6px;font:600 13px/1 var(--f-mono);padding:7px 10px;border-radius:999px;background:var(--card);border:1.5px solid color-mix(in oklab,var(--yes) 45%,var(--line))}
+.core span b{color:var(--yes);font-weight:800;font-size:15px}
+.core span i{font-style:normal;font-weight:400;color:var(--mute);font-size:11.5px}
+
 /* stat */
 .stat{margin-top:30px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 22px;align-items:end}
 .pct{font:800 clamp(64px,8vw,112px)/.8 var(--f-display);font-stretch:75%;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
@@ -249,6 +257,13 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
       <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">01 / 07</span></div>
       <h2>Schrijf je eigen briefing</h2>
       <p class="lead">Behandel Claude als een medewerker of assistent die je project niet kent. Geef de zes dingen mee die een designer altijd beslist: doel, doelgroep, inhoud, stijl, palet en techniek.</p>
+      <div class="core fade" aria-label="Het CORE-principe">
+        <span class="core-t">Denk aan <b>CORE</b>:</span>
+        <span><b>C</b>ontext <i>project, doelgroep, inhoud</i></span>
+        <span><b>O</b>bjective <i>wat moet het opleveren</i></span>
+        <span><b>R</b>ules <i>stijl, palet, techniek</i></span>
+        <span><b>E</b>xpectations <i>wat je terug wil zien</i></span>
+      </div>
       <div class="stat"><div class="pct" data-count>58<small>%</small></div><div class="dots"></div><div class="statcap"><b>34 van 59</b> studenten startte met een volledige briefing</div></div>
       <p class="instead">in plaats van <s>de opdrachttekst plakken</s></p>
     </div>
