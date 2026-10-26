@@ -78,11 +78,11 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
 .core-t b{color:var(--ink)}
 .core .cp{display:inline-flex;align-items:baseline;font:600 13px/1 var(--f-mono);color:var(--ink);padding:7px 10px;border-radius:999px;background:var(--card);border:1.5px solid color-mix(in oklab,var(--yes) 45%,var(--line));cursor:pointer;transition:border-color .2s,background .2s}
 .core .cp b{color:var(--yes);font-weight:800;font-size:15px}
-/* explanation stays folded until hover (mouse) or click/tap (touch + keyboard) */
+/* explanation stays folded until click/tap (or Enter); hover only shows a native tooltip, so the row never jumps */
 .core .cp i{display:inline-block;max-width:0;overflow:hidden;white-space:nowrap;opacity:0;margin-left:0;font-style:normal;font-weight:400;color:var(--mute);font-size:11.5px;transition:max-width .35s ease,opacity .25s ease,margin-left .35s ease}
 .core .cp[aria-expanded="true"]{border-color:var(--yes);background:color-mix(in oklab,var(--yes-soft) 70%,var(--card))}
-.core .cp[aria-expanded="true"] i,.core .cp:focus-visible i{max-width:26ch;opacity:1;margin-left:8px}
-@media (hover:hover){.core .cp:hover{border-color:var(--yes)}.core .cp:hover i{max-width:26ch;opacity:1;margin-left:8px}}
+.core .cp[aria-expanded="true"] i{max-width:26ch;opacity:1;margin-left:8px}
+@media (hover:hover){.core .cp:hover{border-color:var(--yes)}}
 
 /* stat */
 .stat{margin-top:30px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 22px;align-items:end}
@@ -263,10 +263,10 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
       <p class="lead">Behandel Claude als een medewerker of assistent die je project niet kent. Geef de zes dingen mee die een designer altijd beslist: doel, doelgroep, inhoud, stijl, palet en techniek.</p>
       <div class="core fade" aria-label="Het CORE-principe">
         <span class="core-t">Denk aan <b>CORE</b>:</span>
-        <button type="button" class="cp" aria-expanded="false"><b>C</b>ontext<i>project, doelgroep, inhoud</i></button>
-        <button type="button" class="cp" aria-expanded="false"><b>O</b>bjective<i>wat moet het opleveren</i></button>
-        <button type="button" class="cp" aria-expanded="false"><b>R</b>ules<i>stijl, palet, techniek</i></button>
-        <button type="button" class="cp" aria-expanded="false"><b>E</b>xpectations<i>wat je terug wil zien</i></button>
+        <button type="button" class="cp" aria-expanded="false" title="project, doelgroep, inhoud"><b>C</b>ontext<i>project, doelgroep, inhoud</i></button>
+        <button type="button" class="cp" aria-expanded="false" title="wat moet het opleveren"><b>O</b>bjective<i>wat moet het opleveren</i></button>
+        <button type="button" class="cp" aria-expanded="false" title="stijl, palet, techniek"><b>R</b>ules<i>stijl, palet, techniek</i></button>
+        <button type="button" class="cp" aria-expanded="false" title="wat je terug wil zien"><b>E</b>xpectations<i>wat je terug wil zien</i></button>
       </div>
       <div class="stat"><div class="pct" data-count>58<small>%</small></div><div class="dots"></div><div class="statcap"><b>34 van 59</b> studenten startte met een volledige briefing</div></div>
       <p class="instead">in plaats van <s>de opdrachttekst plakken</s></p>
