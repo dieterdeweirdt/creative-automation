@@ -166,8 +166,8 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
 .nv h3{font:800 26px/1.05 var(--f-display);font-stretch:85%;margin:0 0 10px;color:var(--no)}
 .nv p{margin:0 0 12px;max-width:44ch}
 .nv code{font:500 13px/1.5 var(--f-mono);display:block;background:var(--paper);padding:10px 12px;border-radius:8px;word-break:break-word}
-.cheat{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 28px;counter-reset:c}
-@media (max-width:760px){.cheat{grid-template-columns:minmax(0,1fr)}}
+.cheat{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(4,auto);grid-auto-flow:column;gap:10px 28px;counter-reset:c}
+@media (max-width:760px){.cheat{grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-auto-flow:row}}
 .cheat li{counter-increment:c;display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:start;padding:14px 0;border-top:1.5px solid var(--line)}
 .cheat li::before{content:counter(c,decimal-leading-zero);font:800 30px/1 var(--f-display);font-stretch:75%;color:var(--yes)}
 .cheat b{display:block;font:700 17px/1.3 var(--f-body);margin-bottom:3px}
@@ -229,6 +229,7 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
       <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">01 / 07</span></div>
       <h2>De opdrachttekst letterlijk plakken</h2>
       <p class="lead">De opdracht is geschreven voor <em>jou</em>, niet voor Claude. Wie ze plakt, laat Claude raden welke keuzes jij wil maken, en dan kiest Claude de veiligste, meest gemiddelde versie.</p>
+      <p class="lead" style="margin-top:12px">De opdracht of een briefing meegeven <em>als context</em> mag gerust, maar nooit als je enige prompt.</p>
       <div class="stat"><div class="pct" data-count>39<small>%</small></div><div class="dots"></div><div class="statcap"><b>23 van 59</b> studenten plakte minstens één keer opdrachttekst als prompt</div></div>
     </div>
     <div class="stack">
@@ -247,7 +248,7 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
     <div>
       <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">01 / 07</span></div>
       <h2>Schrijf je eigen briefing</h2>
-      <p class="lead">Behandel Claude als een developer die je project niet kent. Geef de zes dingen mee die een designer altijd beslist: doel, doelgroep, inhoud, stijl, palet en techniek.</p>
+      <p class="lead">Behandel Claude als een medewerker of assistent die je project niet kent. Geef de zes dingen mee die een designer altijd beslist: doel, doelgroep, inhoud, stijl, palet en techniek.</p>
       <div class="stat"><div class="pct" data-count>58<small>%</small></div><div class="dots"></div><div class="statcap"><b>34 van 59</b> studenten startte met een volledige briefing</div></div>
       <p class="instead">in plaats van <s>de opdrachttekst plakken</s></p>
     </div>
@@ -344,7 +345,7 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
     <div>
       <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">04 / 07</span></div>
       <h2>Het ontwerp aan Claude overlaten</h2>
-      <p class="lead">Jij bent de designer. Wie elke keuze teruggeeft, krijgt een site die niemand ontworpen heeft: technisch in orde, maar zonder eigen idee erachter.</p>
+      <p class="lead">Jij bent de designer. Wie elke keuze teruggeeft, krijgt een site die niemand ontworpen heeft: technisch in orde, maar zonder eigen idee erachter. <strong>Als je zelf geen inbreng hebt, heb je ook geen job.</strong></p>
       <div class="stat"><div class="pct" data-count>32<small>%</small></div><div class="dots"></div><div class="statcap"><b>19 van 59</b> studenten legde minstens één ontwerpkeuze volledig bij Claude</div></div>
     </div>
     <div class="stack">
@@ -546,7 +547,6 @@ h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-sp
       <li><div><b>Blijf itereren</b><span>vraag een genummerde lijst en kies per nummer</span></div></li>
       <li><div><b>Eén probleem per prompt</b><span>kijk na elke stap in de browser</span></div></li>
     </ol>
-    <p class="method">Hoe we telden: de logboeken van de vibe coding-opdracht (onepage website, oktober 2026) van vier klasgroepen. 59 logboeken met letterlijke prompts; 7 andere bevatten enkel een samenvatting en tellen niet mee. Een student telt mee bij een gewoonte zodra die ze minstens één keer toepaste, dus één student kan bij meerdere gewoontes horen. De indeling gebeurde door elk logboek te lezen; percentages zijn afgerond en geven een orde van grootte.</p>
   </div>
 </section>
 
