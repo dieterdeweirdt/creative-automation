@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Do's en don'ts bij het prompten met Claude Code, op basis van 59 studentenlogboeken (Creative Automation, Arteveldehogeschool).">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Prompt Do's & Don'ts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Layout: één scherm per prompttype, telkens DON'T → DO; links uitleg + klasstatistiek, rechts de prompt als terminal-invoer. */
+:root{
+  --paper:#ECEEF3; --ink:#14151C; --mute:#5B6070; --line:#CBD0DA; --card:#F9FAFC;
+  --no:#E3263F; --no-soft:#F8D7DC; --yes:#1E43F5; --yes-soft:#D8DFFF;
+  --t1:#F2A900; --t2:#00A39A; --t3:#7B4DFF; --t4:#E3263F; --t5:#1E43F5; --t6:#D9480F;
+  --dot:#D3D7E0;
+  --f-display:"Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  --f-body:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0F1118; --ink:#ECEEF3; --mute:#959CAE; --line:#2A2F3D; --card:#171A23;
+  --no:#FF5A70; --no-soft:#3A1720; --yes:#8196FF; --yes-soft:#1B2453;
+  --t1:#FFC53D; --t2:#2FD3C5; --t3:#A88BFF; --t4:#FF5A70; --t5:#8196FF; --t6:#FF8A4C;
+  --dot:#2B303E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0F1118; --ink:#ECEEF3; --mute:#959CAE; --line:#2A2F3D; --card:#171A23;
+  --no:#FF5A70; --no-soft:#3A1720; --yes:#8196FF; --yes-soft:#1B2453;
+  --t1:#FFC53D; --t2:#2FD3C5; --t3:#A88BFF; --t4:#FF5A70; --t5:#8196FF; --t6:#FF8A4C;
+  --dot:#2B303E; color-scheme:dark}
+
+html{scroll-snap-type:y proximity;scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 var(--f-body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+a{color:inherit}
+::selection{background:var(--yes);color:var(--paper)}
+
+/* progress */
+#bar{position:fixed;top:env(safe-area-inset-top,0px);left:0;height:4px;width:0;background:var(--ink);z-index:9;transition:background .3s}
+/* rail */
+#rail{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;z-index:8}
+#rail a{display:block;width:10px;height:10px;border-radius:2px;border:1.5px solid var(--mute);text-decoration:none;position:relative;transition:transform .2s,background .2s,border-color .2s}
+#rail a.no{border-color:var(--no)} #rail a.yes{border-color:var(--yes);border-radius:50%}
+#rail a.on{transform:scale(1.35)} #rail a.on.no{background:var(--no)} #rail a.on.yes{background:var(--yes)} #rail a.on.n{background:var(--ink)}
+#rail a span{position:absolute;right:20px;top:50%;transform:translateY(-50%);white-space:nowrap;font:500 12px/1 var(--f-mono);background:var(--ink);color:var(--paper);padding:5px 7px;border-radius:4px;opacity:0;pointer-events:none;transition:opacity .15s}
+#rail a:hover span,#rail a:focus-visible span{opacity:1}
+#rail a:focus-visible{outline:2px solid var(--yes);outline-offset:3px}
+@media (max-width:760px){#rail{display:none}}
+
+/* pages */
+.pg{min-height:100svh;scroll-snap-align:start;position:relative;overflow:hidden;display:flex;align-items:center;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:72px}
+.pg.no{background:linear-gradient(180deg,var(--paper),color-mix(in oklab,var(--no-soft) 55%,var(--paper)))}
+.pg.yes{background:linear-gradient(180deg,var(--paper),color-mix(in oklab,var(--yes-soft) 60%,var(--paper)))}
+.wrap{width:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(28px,5vw,72px);align-items:center;position:relative;z-index:1}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.ghost{position:absolute;right:-1vw;bottom:-1vw;font:800 clamp(140px,26vw,380px)/.8 var(--f-display);font-stretch:75%;letter-spacing:-.04em;
+  color:transparent;-webkit-text-stroke:1.5px currentColor;opacity:.16;pointer-events:none;user-select:none;will-change:transform;z-index:0;white-space:nowrap}
+.no .ghost{color:var(--no)} .yes .ghost{color:var(--yes)}
+
+.kick{display:inline-flex;align-items:center;gap:10px;font:700 13px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase}
+.stamp{display:inline-flex;align-items:center;gap:8px;padding:8px 12px 8px 10px;border-radius:999px;color:var(--paper);font:800 15px/1 var(--f-display);letter-spacing:.06em}
+.no .stamp{background:var(--no)} .yes .stamp{background:var(--yes)}
+.stamp svg{width:15px;height:15px}
+.kick .num{color:var(--mute)}
+h2{font:800 clamp(38px,5.6vw,76px)/1 var(--f-display);font-stretch:88%;letter-spacing:0;margin:18px 0 16px;text-wrap:balance}
+.lead{font-size:clamp(16px,1.35vw,18.5px);max-width:46ch;color:var(--ink);margin:0}
+.lead em{font-style:normal;font-weight:600}
+
+/* stat */
+.stat{margin-top:30px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 22px;align-items:end}
+.pct{font:800 clamp(64px,8vw,112px)/.8 var(--f-display);font-stretch:75%;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.no .pct{color:var(--no)} .yes .pct{color:var(--yes)}
+.pct small{font-size:.45em;letter-spacing:0;margin-left:2px}
+.dots{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:4px;max-width:300px;padding-bottom:6px}
+.dots i{aspect-ratio:1;border-radius:50%;background:var(--dot);transition:background .25s, transform .25s}
+.dots i.f{transform:scale(1.08)}
+.no .dots i.f{background:var(--no)} .yes .dots i.f{background:var(--yes)}
+.statcap{grid-column:1/-1;font:500 13px/1.4 var(--f-mono);color:var(--mute)}
+.statcap b{color:var(--ink);font-weight:700}
+
+/* prompt cards */
+.stack{display:grid;gap:16px;min-width:0}
+.pr{background:var(--card);border:1.5px solid var(--line);border-radius:12px;overflow:hidden;min-width:0;box-shadow:0 1px 0 var(--line)}
+.no .pr{border-color:color-mix(in oklab,var(--no) 45%,var(--line))}
+.yes .pr{border-color:color-mix(in oklab,var(--yes) 45%,var(--line))}
+.pr-h{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1.5px solid var(--line);font:500 12px/1 var(--f-mono);color:var(--mute)}
+.pr-h .lights{display:flex;gap:5px;margin-right:4px}.pr-h .lights i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.pr-h .tagx{margin-left:auto;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.no .pr-h .tagx{color:var(--no)} .yes .pr-h .tagx{color:var(--yes)}
+.pr-b{padding:16px 18px 18px;font:400 clamp(14px,1.15vw,15.5px)/1.62 var(--f-mono);white-space:pre-wrap;word-break:break-word;position:relative}
+.pr-b::before{content:"> ";color:var(--mute)}
+.pr.big .pr-b{font-size:clamp(15px,1.35vw,17.5px)}
+
+/* strike (don't) */
+.strike{position:relative;display:inline;background-image:linear-gradient(color-mix(in oklab,var(--no) 38%,transparent),color-mix(in oklab,var(--no) 38%,transparent));background-repeat:no-repeat;background-size:100% 1.5px;background-position:0 58%;
+  transition:background-size .7s cubic-bezier(.7,0,.2,1)}
+.await .strike{background-size:0% 1.5px}
+
+/* annotations (do) */
+.hl{border-radius:3px;padding:0 2px;box-decoration-break:clone;-webkit-box-decoration-break:clone;
+  background-image:linear-gradient(color-mix(in oklab,var(--c) 30%,transparent),color-mix(in oklab,var(--c) 30%,transparent));
+  background-repeat:no-repeat;background-size:100% 100%;transition:background-size .5s ease;transition-delay:calc(var(--i,0) * 180ms);
+  box-shadow:inset 0 -2px 0 var(--c)}
+.await .hl{background-size:0% 100%;box-shadow:inset 0 -2px 0 transparent}
+.legend{display:flex;flex-wrap:wrap;gap:6px 8px;padding:0 18px 16px}
+.legend span{font:600 11.5px/1 var(--f-mono);padding:5px 8px;border-radius:999px;border:1.5px solid var(--c);color:var(--ink);transition:opacity .4s,transform .4s;transition-delay:calc(var(--i,0) * 180ms + 200ms)}
+.legend span::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c);margin-right:6px;vertical-align:1px}
+.await .legend span{opacity:0;transform:translateY(6px)}
+
+/* chat thread */
+.thread{display:grid;gap:10px;padding:16px 18px 18px}
+.bub{max-width:88%;font:400 14px/1.5 var(--f-mono);padding:10px 13px;border-radius:12px;transition:opacity .35s,transform .35s;transition-delay:calc(var(--i,0) * 260ms)}
+.bub.me{justify-self:end;background:var(--ink);color:var(--paper);border-bottom-right-radius:3px}
+.bub.ai{justify-self:start;background:var(--paper);border:1.5px solid var(--line);color:var(--mute);border-bottom-left-radius:3px;font-family:var(--f-body)}
+.await .bub{opacity:0;transform:translateY(10px)}
+.bub .who{display:block;font:700 10.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-bottom:5px}
+.thread-foot{padding:0 18px 16px;font:600 13px/1.4 var(--f-mono)}
+.no .thread-foot{color:var(--no)} .yes .thread-foot{color:var(--yes)}
+
+/* "in plaats van" strip on do pages */
+.instead{font:500 13px/1.45 var(--f-mono);color:var(--mute);border-left:3px solid var(--no);padding:4px 0 4px 12px;margin-top:22px;max-width:52ch}
+.instead s{color:var(--no);text-decoration-thickness:2px}
+.why{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:9px;max-width:48ch}
+.why li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start}
+.why li::before{content:"";width:16px;height:16px;margin-top:4px;border-radius:50%;background:var(--yes) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.4l2.6 2.4L12 5.4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+.no .why li::before{background:var(--no) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 5l6 6M11 5l-6 6' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center/100% no-repeat}
+.note{font:500 12px/1.4 var(--f-mono);color:var(--mute);margin-top:4px}
+
+/* intro */
+.intro .wrap{grid-template-columns:minmax(0,1fr)}
+.intro h1{font:800 clamp(52px,10vw,150px)/.92 var(--f-display);font-stretch:88%;letter-spacing:.005em;margin:20px 0 26px;text-wrap:balance}
+.intro h1 .d{color:var(--yes)} .intro h1 .n{color:var(--no);position:relative}
+.intro h1 .n::after{content:"";position:absolute;left:-2%;right:-2%;top:54%;height:.07em;background:var(--no);transform-origin:left;transform:scaleX(1);transition:transform .9s cubic-bezier(.7,0,.2,1) .4s}
+.intro.await h1 .n::after{transform:scaleX(0)}
+.intro .lead{max-width:60ch;font-size:clamp(17px,1.6vw,21px)}
+.meta{display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:34px;font:500 13px/1.4 var(--f-mono);color:var(--mute)}
+.meta b{display:block;font:800 34px/1 var(--f-display);font-stretch:80%;color:var(--ink);letter-spacing:-.02em;margin-bottom:4px}
+.legendrow{display:flex;flex-wrap:wrap;gap:12px 22px;margin-top:30px;font:500 13px/1.4 var(--f-mono)}
+.legendrow span{display:inline-flex;align-items:center;gap:8px}
+.legendrow i{width:12px;height:12px;border-radius:2px;background:var(--no)} .legendrow i.y{background:var(--yes);border-radius:50%}
+.go{margin-top:34px;display:inline-flex;align-items:center;gap:10px;font:700 14px/1 var(--f-mono);text-decoration:none;border:1.5px solid var(--ink);padding:12px 16px;border-radius:999px;transition:background .2s,color .2s}
+.go:hover,.go:focus-visible{background:var(--ink);color:var(--paper);outline:none}
+.go svg{width:14px;height:14px;animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(3px)}}
+
+/* trio / never / cheat */
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
+.tri{background:var(--card);border:1.5px solid color-mix(in oklab,var(--yes) 40%,var(--line));border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.tri h3{font:800 24px/1.05 var(--f-display);font-stretch:85%;margin:0;letter-spacing:-.01em}
+.tri .mini{display:flex;align-items:baseline;gap:10px}
+.tri .mini b{font:800 44px/.9 var(--f-display);font-stretch:75%;color:var(--yes);font-variant-numeric:tabular-nums}
+.tri .mini span{font:500 12px/1.3 var(--f-mono);color:var(--mute)}
+.tri .q{font:400 13.5px/1.55 var(--f-mono);background:var(--paper);border-radius:8px;padding:10px 12px;word-break:break-word}
+.tri .q::before{content:"> ";color:var(--mute)}
+.span2{grid-column:1/-1}
+.never{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.never{grid-template-columns:minmax(0,1fr)}}
+.nv{border:2px dashed var(--no);border-radius:12px;padding:20px;background:var(--card)}
+.nv h3{font:800 26px/1.05 var(--f-display);font-stretch:85%;margin:0 0 10px;color:var(--no)}
+.nv p{margin:0 0 12px;max-width:44ch}
+.nv code{font:500 13px/1.5 var(--f-mono);display:block;background:var(--paper);padding:10px 12px;border-radius:8px;word-break:break-word}
+.cheat{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 28px;counter-reset:c}
+@media (max-width:760px){.cheat{grid-template-columns:minmax(0,1fr)}}
+.cheat li{counter-increment:c;display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:start;padding:14px 0;border-top:1.5px solid var(--line)}
+.cheat li::before{content:counter(c,decimal-leading-zero);font:800 30px/1 var(--f-display);font-stretch:75%;color:var(--yes)}
+.cheat b{display:block;font:700 17px/1.3 var(--f-body);margin-bottom:3px}
+.cheat span{color:var(--mute);font-size:15px}
+.method{margin-top:30px;font:500 12.5px/1.6 var(--f-mono);color:var(--mute);max-width:90ch}
+
+.fade{transition:opacity .6s,transform .6s}
+.await .fade{opacity:0;transform:translateY(14px)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  .ghost{transform:none!important}
+}
+:focus-visible{outline:2px solid var(--yes);outline-offset:3px}
+</style>
+</head>
+<body>
+
+<div id="bar"></div>
+<nav id="rail" aria-label="Pagina's"></nav>
+
+<main id="pages">
+
+<section class="pg intro n" id="start" data-label="Start">
+  <div class="ghost" aria-hidden="true">PROMPT</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="num">Creative Automation · vibe coding</span></div>
+      <h1><span class="n">Don't</span> <span class="d">&amp; do</span><br>bij het prompten</h1>
+      <p class="lead fade">We lazen de logboeken van de onepager-opdracht: alle prompts die jullie aan Claude Code gaven, letterlijk. Per gewoonte zie je hoeveel procent van de klas dit deed. Eerst wat niet werkt, daarna wat je beter doet. Alle voorbeelden zijn echt, zonder namen.</p>
+      <div class="meta fade">
+        <div><b>59</b>logboeken</div>
+        <div><b>4</b>klasgroepen</div>
+        <div><b>±1000</b>prompts gelezen</div>
+      </div>
+      <div class="legendrow fade">
+        <span><i></i>don't: dit werkt tegen je</span>
+        <span><i class="y"></i>do: dit levert betere sites op</span>
+        <span>● 1 stip = 1 student</span>
+      </div>
+      <a class="go fade" href="#dont-1">Start <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2v10M3 8l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="pg no" id="dont-1" data-label="Don't · opdracht plakken" data-n="23">
+  <div class="ghost" aria-hidden="true">DON'T</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">01 / 07</span></div>
+      <h2>De opdrachttekst letterlijk plakken</h2>
+      <p class="lead">De opdracht is geschreven voor <em>jou</em>, niet voor Claude. Wie ze plakt, laat Claude raden welke keuzes jij wil maken, en dan kiest Claude de veiligste, meest gemiddelde versie.</p>
+      <div class="stat"><div class="pct" data-count>39<small>%</small></div><div class="dots"></div><div class="statcap"><b>23 van 59</b> studenten plakte minstens één keer opdrachttekst als prompt</div></div>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt · v2<span class="tagx">geplakt</span></div>
+        <div class="pr-b"><span class="strike">Versie 2: optimaliseren met skills 6. Zoek en installeer skills van andere partijen. Laad minstens 2 skills in die je niet zelf schreef, gericht op UX, design en/of animatie. Vertrekpunten: …</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt · v1<span class="tagx">geplakt</span></div>
+        <div class="pr-b"><span class="strike">Stuur gerichte bijsturingsprompts (één probleem per prompt) in plaats van "maak het mooier".</span></div></div>
+      <p class="note">Ja, deze tweede werd echt zo naar Claude gestuurd.</p>
+    </div>
+  </div>
+</section>
+
+<section class="pg yes" id="do-1" data-label="Do · eigen startprompt" data-n="34">
+  <div class="ghost" aria-hidden="true">DO</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">01 / 07</span></div>
+      <h2>Schrijf je eigen briefing</h2>
+      <p class="lead">Behandel Claude als een developer die je project niet kent. Geef de zes dingen mee die een designer altijd beslist: doel, doelgroep, inhoud, stijl, palet en techniek.</p>
+      <div class="stat"><div class="pct" data-count>58<small>%</small></div><div class="dots"></div><div class="statcap"><b>34 van 59</b> studenten startte met een volledige briefing</div></div>
+      <p class="instead">in plaats van <s>de opdrachttekst plakken</s></p>
+    </div>
+    <div class="stack">
+      <div class="pr big"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>startprompt · v1<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">Maak een onepager in <span class="hl" style="--c:var(--t1);--i:0">brutalist style</span> met volgend kleurenpalet: <span class="hl" style="--c:var(--t3);--i:1">#330136 #5E1742 #962E40 #C9463D #FF5E35</span>. Het doel is <span class="hl" style="--c:var(--t2);--i:2">studenten digitale vormgeving die volgend academiejaar starten een beeld geven van wat ze leren</span> in Creative Automation. Zorg dat <span class="hl" style="--c:var(--t5);--i:3">de tekst uit content.md komt en elk hoofdstuk een eigen sectie wordt</span>. Gebruik <span class="hl" style="--c:var(--t6);--i:4">één index.html met eventueel aparte css/js, puur HTML/CSS/JS, geen framework</span>. Maak de onepager <span class="hl" style="--c:var(--t4);--i:5">responsive</span>.</div>
+        <div class="legend"><span style="--c:var(--t1);--i:0">stijl</span><span style="--c:var(--t3);--i:1">palet</span><span style="--c:var(--t2);--i:2">doel + doelgroep</span><span style="--c:var(--t5);--i:3">inhoud</span><span style="--c:var(--t6);--i:4">techniek</span><span style="--c:var(--t4);--i:5">responsive</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="pg no" id="dont-2" data-label="Don't · vaag oordeel" data-n="18">
+  <div class="ghost" aria-hidden="true">DON'T</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">02 / 07</span></div>
+      <h2>Een gevoel geven in plaats van een richting</h2>
+      <p class="lead">"Saai", "droog" of "10x beter" vertelt Claude dat je niet tevreden bent, maar niet <em>wat</em> er moet veranderen. Claude gokt dan, en verandert vaak net het deel dat je goed vond.</p>
+      <div class="stat"><div class="pct" data-count>31<small>%</small></div><div class="dots"></div><div class="statcap"><b>18 van 59</b> studenten stuurde bij met een vaag smaakoordeel</div></div>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing<span class="tagx">vaag</span></div><div class="pr-b"><span class="strike">ik vind de kleuren wat saai</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing<span class="tagx">vaag</span></div><div class="pr-b"><span class="strike">nog niet echt, maak het speelser zodat het leuker is. nu is het nog wat te droog</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing<span class="tagx">vaag</span></div><div class="pr-b"><span class="strike">het mag echt 10x futuristischer, maak er echt iets zot van</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="pg yes" id="do-2" data-label="Do · probleem + oorzaak" data-n="24">
+  <div class="ghost" aria-hidden="true">DO</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">02 / 07</span></div>
+      <h2>Benoem wat er mis is, en waarom</h2>
+      <p class="lead">Kijk als een art director: welk element, waar, wat gaat er fout, en wat wil je in de plaats. Dan kan Claude gericht ingrijpen zonder de rest te slopen.</p>
+      <div class="stat"><div class="pct" data-count>41<small>%</small></div><div class="dots"></div><div class="statcap"><b>24 van 59</b> studenten benoemde probleem én oorzaak</div></div>
+      <p class="instead">in plaats van <s>"ik vind het wat saai"</s></p>
+    </div>
+    <div class="stack">
+      <div class="pr big"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v1<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">In de <span class="hl" style="--c:var(--t1);--i:0">navigatiebalk</span> staat <span class="hl" style="--c:var(--t4);--i:1">te veel tekst</span>. Dit zorgt ervoor dat <span class="hl" style="--c:var(--t3);--i:2">bij het responsive maken de navbar er niet mooi meer uitziet</span>. Kan je de navbar <span class="hl" style="--c:var(--t2);--i:3">optimaliseren zodat deze functioneler is</span>?</div>
+        <div class="legend"><span style="--c:var(--t1);--i:0">element</span><span style="--c:var(--t4);--i:1">probleem</span><span style="--c:var(--t3);--i:2">gevolg</span><span style="--c:var(--t2);--i:3">gewenst</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v1<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">Probleem 2: als ik kleiner schaal op mijn pc tot het navigatiemenu verschijnt, vind ik de hover bij de menu-items niet duidelijk. Voeg een hover toe op de menu-items.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="pg no" id="dont-3" data-label="Don't · meer animatie" data-n="16">
+  <div class="ghost" aria-hidden="true">DON'T</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">03 / 07</span></div>
+      <h2>"Meer animaties" vragen</h2>
+      <p class="lead">Animatie is een ontwerpbeslissing, geen hoeveelheid. Zonder trigger, element en beweging krijg je fade-ins op alles, of net zoveel beweging dat de tekst onleesbaar wordt.</p>
+      <div class="stat"><div class="pct" data-count>27<small>%</small></div><div class="dots"></div><div class="statcap"><b>16 van 59</b> studenten vroeg animatie zonder te zeggen welke</div></div>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v2<span class="tagx">vaag</span></div><div class="pr-b"><span class="strike">ik wil nog meer animaties</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v2<span class="tagx">vaag</span></div><div class="pr-b"><span class="strike">maak de animaties duidelijker</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v2<span class="tagx">vaag</span></div><div class="pr-b"><span class="strike">voeg nu animaties toe, verbeter het overal design</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="pg yes" id="do-3" data-label="Do · beweging beschrijven" data-n="25">
+  <div class="ghost" aria-hidden="true">DO</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">03 / 07</span></div>
+      <h2>Beschrijf de beweging zoals in een storyboard</h2>
+      <p class="lead">Wat beweegt, wanneer start het, welke richting, hoe snel. Klein en precies bijsturen werkt voor animatie net zo goed als voor spacing of kleur.</p>
+      <div class="stat"><div class="pct" data-count>42<small>%</small></div><div class="dots"></div><div class="statcap"><b>25 van 59</b> studenten stuurde klein en precies bij</div></div>
+      <p class="instead">in plaats van <s>"ik wil nog meer animaties"</s></p>
+    </div>
+    <div class="stack">
+      <div class="pr big"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v2<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">Zorg <span class="hl" style="--c:var(--t1);--i:0">bij het scrollen</span> voor meer animaties: <span class="hl" style="--c:var(--t3);--i:1">de hoofdstukken</span> moeten <span class="hl" style="--c:var(--t2);--i:2">afwisselend van links en rechts binnenschuiven</span>.</div>
+        <div class="legend"><span style="--c:var(--t1);--i:0">trigger</span><span style="--c:var(--t3);--i:1">element</span><span style="--c:var(--t2);--i:2">beweging</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v1<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">Goed, maar zorg dat de animaties iets vroeger infaden bij de tekst wanneer je scrolt.</div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v1<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">Kan je het iets trager laten gebeuren? De animatie gaat vrij snel, het kan wat too much worden.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="pg no" id="dont-4" data-label="Don't · Claude laten kiezen" data-n="19">
+  <div class="ghost" aria-hidden="true">DON'T</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">04 / 07</span></div>
+      <h2>Het ontwerp aan Claude overlaten</h2>
+      <p class="lead">Jij bent de designer. Wie elke keuze teruggeeft, krijgt een site die niemand ontworpen heeft: technisch in orde, maar zonder eigen idee erachter.</p>
+      <div class="stat"><div class="pct" data-count>32<small>%</small></div><div class="dots"></div><div class="statcap"><b>19 van 59</b> studenten legde minstens één ontwerpkeuze volledig bij Claude</div></div>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt<span class="tagx">gedelegeerd</span></div><div class="pr-b"><span class="strike">Je mag alles doen wat je hartje verlangt.</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt<span class="tagx">gedelegeerd</span></div><div class="pr-b"><span class="strike">doe maar gek met de animaties, overdrijf maar overal</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt<span class="tagx">gedelegeerd</span></div><div class="pr-b"><span class="strike">Maak deze opdracht voor me: [volledige opdrachttekst]</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="pg yes" id="do-4" data-label="Do · eerst plan + vragen" data-n="15">
+  <div class="ghost" aria-hidden="true">DO</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">04 / 07</span></div>
+      <h2>Laat Claude eerst vragen stellen</h2>
+      <p class="lead">Twijfel je zelf nog? Vraag dan geen resultaat, maar een plan en vragen. Zo maak jij de keuzes, met Claude als sparringpartner, en zie je de richting voor er één regel code staat.</p>
+      <div class="stat"><div class="pct" data-count>25<small>%</small></div><div class="dots"></div><div class="statcap"><b>15 van 59</b> studenten liet eerst een plan of vragen maken</div></div>
+      <p class="instead">in plaats van <s>"je mag alles doen wat je hartje verlangt"</s></p>
+    </div>
+    <div class="stack">
+      <div class="pr big"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>startprompt · v1<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b"><span class="hl" style="--c:var(--t4);--i:0">Bouw nog niets.</span> <span class="hl" style="--c:var(--t1);--i:1">Maak eerst een plan</span> en <span class="hl" style="--c:var(--t2);--i:2">stel me verduidelijkende vragen</span>. <span class="hl" style="--c:var(--t3);--i:3">Wacht op mijn goedkeuring van het plan</span> voor je begint te bouwen.</div>
+        <div class="legend"><span style="--c:var(--t4);--i:0">rem</span><span style="--c:var(--t1);--i:1">plan</span><span style="--c:var(--t2);--i:2">vragen</span><span style="--c:var(--t3);--i:3">jij beslist</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>antwoord op de vragen<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">1. je mag Google Fonts gebruiken  2. ja, dat mag ook  3. simpele illustraties zijn goed  4. dat mag</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="pg no" id="dont-5" data-label="Don't · skill zonder taak" data-n="17">
+  <div class="ghost" aria-hidden="true">DON'T</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">05 / 07</span></div>
+      <h2>Een skill aanroepen zonder opdracht</h2>
+      <p class="lead">Een skill is een set werkinstructies, geen toverknop. Zonder taak weet Claude niet wat het met die instructies moet doen, en past het ze toe op alles of op niets.</p>
+      <div class="stat"><div class="pct" data-count>29<small>%</small></div><div class="dots"></div><div class="statcap"><b>17 van 59</b> studenten riep een skill aan zonder taak, of plakte de skilltekst</div></div>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt · v2<span class="tagx">geen taak</span></div><div class="pr-b"><span class="strike">/frontend-design:frontend-design</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt · v2<span class="tagx">geen taak</span></div><div class="pr-b"><span class="strike">/impeccable bolder</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt · v2<span class="tagx">geen taak</span></div><div class="pr-b"><span class="strike">gebruik de volgende skill die we hebben geïnstalleerd</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="pg yes" id="do-5" data-label="Do · skill + taak" data-n="25">
+  <div class="ghost" aria-hidden="true">DO</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">05 / 07</span></div>
+      <h2>Koppel elke skill aan één taak</h2>
+      <p class="lead">Noem de skill, het bestand, wat je wil laten nakijken of maken, en wat je terug wil zien. Eén skill per as werkt het best: een voor design, een voor UX, een voor animatie.</p>
+      <div class="stat"><div class="pct" data-count>42<small>%</small></div><div class="dots"></div><div class="statcap"><b>25 van 59</b> studenten koppelde een skill aan een concrete taak</div></div>
+      <p class="instead">in plaats van <s>"/frontend-design:frontend-design"</s></p>
+    </div>
+    <div class="stack">
+      <div class="pr big"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt · v2<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">Gebruik de <span class="hl" style="--c:var(--t3);--i:0">web-design-guidelines skill</span> om <span class="hl" style="--c:var(--t1);--i:1">index.html en style.css</span> te reviewen op <span class="hl" style="--c:var(--t2);--i:2">UX, leesbaarheid en toegankelijkheid</span>. <span class="hl" style="--c:var(--t5);--i:3">Toon de bevindingen en los ze daarna op.</span></div>
+        <div class="legend"><span style="--c:var(--t3);--i:0">skill</span><span style="--c:var(--t1);--i:1">bestanden</span><span style="--c:var(--t2);--i:2">focus</span><span style="--c:var(--t5);--i:3">output</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>prompt · v2<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">Gebruik de emil-design-eng skill om scroll-animaties, overgangen en hover/klik micro-interacties toe te voegen en te verfijnen.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="pg no" id="dont-6" data-label="Don't · niet bijsturen" data-n="19">
+  <div class="ghost" aria-hidden="true">DON'T</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">06 / 07</span></div>
+      <h2>Eén keer prompten en klaar</h2>
+      <p class="lead">De eerste versie is een schets, nooit het eindresultaat. Wie na één grote prompt meteen het logboek laat maken, levert in feite de standaardkeuzes van Claude in.</p>
+      <div class="stat"><div class="pct" data-count>32<small>%</small></div><div class="dots"></div><div class="statcap"><b>19 van 59</b> studenten stuurde na de eerste versie weinig of niet bij</div></div>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>volledige sessie<span class="tagx">echt verloop</span></div>
+        <div class="thread">
+          <div class="bub me" style="--i:0"><span class="who">student</span>/impeccable design a onepage website that gives new students … information about what they will learn. Use content.md for the text.</div>
+          <div class="bub ai" style="--i:1"><span class="who">claude</span>Bouwt een volledige site…</div>
+          <div class="bub me" style="--i:2"><span class="who">student</span>Continue from where you left off.</div>
+          <div class="bub me" style="--i:3"><span class="who">student</span>zet alle files die je net hebt gegenereerd in de map v2/</div>
+          <div class="bub me" style="--i:4"><span class="who">student</span>Zet alle prompts die ik in deze sessie gaf in een bestand logboek.md.</div>
+        </div>
+        <div class="thread-foot">4 prompts · 0 keer bijgestuurd · geen v1</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="pg yes" id="do-6" data-label="Do · laat een lijst maken" data-n="8">
+  <div class="ghost" aria-hidden="true">DO</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">06 / 07</span></div>
+      <h2>Laat Claude voorstellen doen, en kies zelf</h2>
+      <p class="lead">Geen inspiratie meer om bij te sturen? Vraag een genummerde lijst met verbeterpunten of opties, en antwoord per nummer. Zo blijf je itereren én blijf jij de baas over het resultaat.</p>
+      <div class="stat"><div class="pct" data-count>14<small>%</small></div><div class="dots"></div><div class="statcap"><b>8 van 59</b> studenten gaf feedback per element of koos gericht uit opties</div></div>
+      <p class="instead">in plaats van <s>"Continue from where you left off."</s></p>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>sessie · v2<span class="tagx">echt verloop</span></div>
+        <div class="thread">
+          <div class="bub me" style="--i:0"><span class="who">student</span>Gebruik de impeccable skill (critique/audit) op v2/ en geef eerst een lijst met verbeterpunten.</div>
+          <div class="bub ai" style="--i:1"><span class="who">claude</span>1. oriëntatie op mobiel · 2. contrast labels · 3. … · 5. …</div>
+          <div class="bub me" style="--i:2"><span class="who">student</span>Ja, los de bevindingen 1 tot 5 uit "Waar beginnen" op.</div>
+        </div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · beelden<span class="tagx">echt voorbeeld</span></div>
+        <div class="pr-b">zoek passendere foto's: foto 1 is oké maar moet scherper, foto 2 is onduidelijk, foto 3 is ook niet duidelijk, foto 4 past niet binnen het thema en foto 5 is oké maar staat niet mooi</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="pg no" id="dont-7" data-label="Don't · alles in één prompt" data-n="9">
+  <div class="ghost" aria-hidden="true">DON'T</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>DON'T</span><span class="num">07 / 07</span></div>
+      <h2>Vijf wensen in één bericht</h2>
+      <p class="lead">Claude voert dan alles een beetje uit, en als er iets misgaat, weet je niet welke wens de boosdoener was. Je kan ook niet één ding terugdraaien.</p>
+      <div class="stat"><div class="pct" data-count>15<small>%</small></div><div class="dots"></div><div class="statcap"><b>9 van 59</b> studenten stopte meerdere wensen in één prompt</div></div>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v1<span class="tagx">te veel</span></div><div class="pr-b"><span class="strike">Maak toch een navbar. Steek er meer animaties in. Probeer ook eens een ander design. Gebruik vooral vormen, geen afbeeldingen.</span></div></div>
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>bijsturing · v2<span class="tagx">te veel</span></div><div class="pr-b"><span class="strike">voeg meer beweging toe in het onderdeel 'zin om slimmer te ontwerpen', er is te veel witruimte tussen de hero en de intro, ik wil ook een custom cursor …</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="pg yes" id="do-7" data-label="Do · één ding per prompt" data-n="25">
+  <div class="ghost" aria-hidden="true">DO</div>
+  <div class="wrap">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO</span><span class="num">07 / 07</span></div>
+      <h2>Eén probleem per prompt</h2>
+      <p class="lead">Splits je lijstje op. Bekijk na elke stap het resultaat in de browser voor je de volgende stuurt. Het voelt trager, maar je bent sneller klaar.</p>
+      <div class="stat"><div class="pct" data-count>42<small>%</small></div><div class="dots"></div><div class="statcap"><b>25 van 59</b> studenten stuurde klein en precies bij, één ding tegelijk</div></div>
+      <p class="instead">in plaats van <s>vijf wensen in één bericht</s></p>
+    </div>
+    <div class="stack">
+      <div class="pr"><div class="pr-h"><span class="lights"><i></i><i></i><i></i></span>dezelfde wensen, opgesplitst<span class="tagx">herschreven</span></div>
+        <div class="thread">
+          <div class="bub me" style="--i:0"><span class="who">prompt 1</span>Er is te veel witruimte tussen de hero en de intro. Halveer die ruimte op desktop en mobiel.</div>
+          <div class="bub ai" style="--i:1"><span class="who">jij</span>bekijkt het resultaat in de browser ✓</div>
+          <div class="bub me" style="--i:2"><span class="who">prompt 2</span>Laat in de sectie "Zin om slimmer te ontwerpen" de woorden van de titel één voor één invallen wanneer de sectie in beeld komt.</div>
+          <div class="bub ai" style="--i:3"><span class="who">jij</span>bekijkt het resultaat in de browser ✓</div>
+          <div class="bub me" style="--i:4"><span class="who">prompt 3</span>Vervang de cursor door een kleine cirkel in de accentkleur die groter wordt boven links en knoppen.</div>
+        </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- bonus -->
+<section class="pg yes" id="extra" data-label="Do · drie extra gewoontes" data-n="">
+  <div class="ghost" aria-hidden="true">DO+</div>
+  <div class="wrap" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3L12.5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>DO+</span><span class="num">wat de sterkste logboeken extra deden</span></div>
+      <h2>Drie gewoontes die maar weinig studenten hadden</h2>
+    </div>
+    <div class="trio">
+      <div class="tri fade"><div class="mini"><b data-count>14%</b><span>8 van 59</span></div><h3>Lees de skill voor je hem installeert</h3><p class="lead" style="font-size:15px">Een skill voert instructies en soms scripts uit op jouw computer.</p><div class="q">Toon me eerst de inhoud van de SKILL.md voor je installeert.</div></div>
+      <div class="tri fade"><div class="mini"><b data-count>14%</b><span>8 van 59</span></div><h3>Vraag zelf naar toegankelijkheid</h3><p class="lead" style="font-size:15px">Claude checkt het niet vanzelf. Excelleren begint hier.</p><div class="q">Zijn er alt-teksten? Is het toegankelijk voor mensen met kleurenblindheid? Is er genoeg contrast?</div></div>
+      <div class="tri fade"><div class="mini"><b data-count>10%</b><span>6 van 59</span></div><h3>Leg een beeldstijl vast met kleuren</h3><p class="lead" style="font-size:15px">Zo blijven de AI-beelden per sectie één reeks.</p><div class="q">Flat two-colour screen-print illustration using ONLY deep indigo (#251651) and pale mint cyan (#D6FFF7), no gradients, no shading…</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="pg no" id="nooit" data-label="Nooit doen" data-n="">
+  <div class="ghost" aria-hidden="true">NOOIT</div>
+  <div class="wrap" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      <div class="kick"><span class="stamp"><svg viewBox="0 0 16 16"><path d="M8 3v6M8 12.5v.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>NOOIT</span><span class="num">elk één keer gezien of geprobeerd</span></div>
+      <h2>Twee dingen die nooit in een prompt horen</h2>
+    </div>
+    <div class="never">
+      <div class="nv fade"><h3>API-sleutels en wachtwoorden</h3><p>Een token in een chat staat in je logboek, je sessiegeschiedenis en soms in je repo op GitHub. Wie hem vindt, gebruikt jouw account en jouw credits.</p><code>[twee API-tokens geplakt in de prompt]</code></div>
+      <div class="nv fade"><h3>Prompts laten verzinnen voor je logboek</h3><p>Het logboek toont hoe jij stuurt. Laat Claude achteraf geen "betere" prompts verzinnen: dan is het geen logboek meer en kunnen we je werk niet beoordelen. Hier weigerde Claude het, terecht.</p><code>kan je me prompts voorstellen voor in het logboek? het mag niet gewoon zijn</code></div>
+    </div>
+  </div>
+</section>
+
+<section class="pg n" id="spiek" data-label="Spiekbrief" data-n="">
+  <div class="ghost" aria-hidden="true">✓</div>
+  <div class="wrap" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      <div class="kick"><span class="num">spiekbrief voor je volgende sessie</span></div>
+      <h2>Zeven regels om bij je scherm te hangen</h2>
+    </div>
+    <ol class="cheat fade">
+      <li><div><b>Schrijf je eigen briefing</b><span>doel, doelgroep, inhoud, stijl, palet, techniek</span></div></li>
+      <li><div><b>Benoem probleem én oorzaak</b><span>welk element, wat gaat er fout, wat wil je in de plaats</span></div></li>
+      <li><div><b>Beschrijf animatie als een storyboard</b><span>trigger, element, richting, snelheid</span></div></li>
+      <li><div><b>Laat eerst een plan en vragen maken</b><span>jij beslist, Claude stelt voor</span></div></li>
+      <li><div><b>Eén skill, één taak</b><span>skill + bestand + focus + wat je terug wil</span></div></li>
+      <li><div><b>Blijf itereren</b><span>vraag een genummerde lijst en kies per nummer</span></div></li>
+      <li><div><b>Eén probleem per prompt</b><span>kijk na elke stap in de browser</span></div></li>
+    </ol>
+    <p class="method">Hoe we telden: de logboeken van de vibe coding-opdracht (onepage website, oktober 2026) van vier klasgroepen. 59 logboeken met letterlijke prompts; 7 andere bevatten enkel een samenvatting en tellen niet mee. Een student telt mee bij een gewoonte zodra die ze minstens één keer toepaste, dus één student kan bij meerdere gewoontes horen. De indeling gebeurde door elk logboek te lezen; percentages zijn afgerond en geven een orde van grootte.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+(function(){
+  const N=59;
+  const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pages=[...document.querySelectorAll('.pg')];
+  // dot grids (rest state = filled)
+  pages.forEach(p=>{
+    const d=p.querySelector('.dots'); const n=+p.dataset.n||0; if(!d) return;
+    for(let i=0;i<N;i++){const e=document.createElement('i'); if(i<n) e.className='f'; d.appendChild(e)}
+    d.setAttribute('role','img'); d.setAttribute('aria-label',n+' van '+N+' studenten');
+  });
+  // rail
+  const rail=document.getElementById('rail');
+  pages.forEach(p=>{
+    const a=document.createElement('a'); a.href='#'+p.id; a.className=p.classList.contains('no')?'no':p.classList.contains('yes')?'yes':'n';
+    a.innerHTML='<span>'+(p.dataset.label||'')+'</span>'; a.setAttribute('aria-label',p.dataset.label||p.id); rail.appendChild(a);
+  });
+  const links=[...rail.children];
+  // animate-in: only for pages not yet in view at load
+  function countUp(el){
+    const m=el.textContent.match(/(\d+)/); if(!m) return; const target=+m[1]; const html=el.innerHTML; const t0=performance.now(); const dur=900;
+    function f(t){const k=Math.min(1,(t-t0)/dur); const v=Math.round(target*(1-Math.pow(1-k,3))); el.innerHTML=html.replace(/\d+/,v); if(k<1) requestAnimationFrame(f)}
+    requestAnimationFrame(f);
+  }
+  function fillDots(p){
+    const ds=[...p.querySelectorAll('.dots i')]; const n=+p.dataset.n||0;
+    ds.forEach(d=>d.classList.remove('f'));
+    ds.slice(0,n).forEach((d,i)=>setTimeout(()=>d.classList.add('f'),120+i*28));
+  }
+  function play(p){
+    p.classList.remove('await');
+    p.querySelectorAll('[data-count]').forEach(countUp);
+    fillDots(p);
+  }
+  const vh=window.innerHeight;
+  if(!reduce && 'IntersectionObserver' in window){
+    pages.forEach(p=>{const r=p.getBoundingClientRect(); if(r.top>vh*0.6) p.classList.add('await')});
+    const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&e.target.classList.contains('await')){play(e.target);io.unobserve(e.target)}})},{threshold:.35});
+    pages.forEach(p=>{if(p.classList.contains('await')) io.observe(p)});
+    // intro strike on load
+    const intro=document.getElementById('start'); intro.classList.add('await'); requestAnimationFrame(()=>requestAnimationFrame(()=>intro.classList.remove('await')));
+  }
+  // active page + progress + ghost parallax
+  const bar=document.getElementById('bar');
+  let ticking=false;
+  function onScroll(){
+    ticking=false;
+    const y=window.scrollY, H=document.documentElement.scrollHeight-window.innerHeight;
+    bar.style.width=(H>0?y/H*100:0)+'%';
+    let cur=0;
+    pages.forEach((p,i)=>{const r=p.getBoundingClientRect(); if(r.top<=window.innerHeight*0.45) cur=i;
+      if(!reduce){const g=p.querySelector('.ghost'); if(g&&r.bottom>0&&r.top<window.innerHeight){g.style.transform='translate3d('+(r.top*-0.08)+'px,'+(r.top*0.12)+'px,0)'}}});
+    links.forEach((a,i)=>a.classList.toggle('on',i===cur));
+    const p=pages[cur]; bar.style.background=p.classList.contains('no')?'var(--no)':p.classList.contains('yes')?'var(--yes)':'var(--ink)';
+  }
+  window.addEventListener('scroll',()=>{if(!ticking){ticking=true;requestAnimationFrame(onScroll)}},{passive:true});
+  window.addEventListener('resize',onScroll); onScroll();
+  // keyboard paging
+  function idx(){let c=0;pages.forEach((p,i)=>{if(p.getBoundingClientRect().top<=window.innerHeight*0.45)c=i});return c}
+  document.addEventListener('keydown',e=>{
+    if(e.target.closest&&e.target.closest('input,textarea')) return;
+    let d=0; if(['ArrowDown','PageDown','j'].includes(e.key)) d=1; if(['ArrowUp','PageUp','k'].includes(e.key)) d=-1; if(e.key===' ') d=e.shiftKey?-1:1;
+    if(!d) return; e.preventDefault(); const t=pages[Math.max(0,Math.min(pages.length-1,idx()+d))]; t.scrollIntoView({behavior:reduce?'auto':'smooth'});
+  });
+  if(location.hash){const t=document.getElementById(location.hash.slice(1)); if(t){t.classList.remove('await'); setTimeout(()=>t.scrollIntoView(),50)}}
+})();
+</script>
+</body>
+</html>
